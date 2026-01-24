@@ -1,0 +1,766 @@
+Folder PATH listing
+Volume serial number is 6A70-BD19
+C:.
+³   .editorconfig
+³   .env
+³   .env.example
+³   .gitattributes
+³   .gitignore
+³   .htaccess
+³   AI_IMPLEMENTATION_PROMPT.md
+³   artisan
+³   composer.json
+³   composer.lock
+³   default.php
+³   ENHANCEMENTS_COMPLETE.md
+³   IMPLEMENTATION_STATUS.md
+³   LOGIN_CREDENTIALS.md.pdf
+³   MODERNIZATION_GUIDE.md
+³   package.json
+³   phpunit.xml
+³   project_structure.txt
+³   README.md
+³   u440055003_farmvax.sql
+³   vite.config.js
+³   WORLD_PACKAGE_SETUP.md
+³   
+ÃÄÄÄapp
+³   ÃÄÄÄHttp
+³   ³   ÃÄÄÄControllers
+³   ³   ³   ³   ChatController.php
+³   ³   ³   ³   Controller.php
+³   ³   ³   ³   
+³   ³   ³   ÃÄÄÄAdmin
+³   ³   ³   ³       AdsController.php
+³   ³   ³   ³       BulkMessageController.php
+³   ³   ³   ³       DashboardController copy.php
+³   ³   ³   ³       DashboardController.php
+³   ³   ³   ³       DashboardControllertest.php
+³   ³   ³   ³       DataCollectorApprovalController.php
+³   ³   ³   ³       OutbreakAlertController.php
+³   ³   ³   ³       SettingsController.php
+³   ³   ³   ³       UserManagementController.php
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄApi
+³   ³   ³   ³       AiChatController.php
+³   ³   ³   ³       LocationController.php
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄAuth
+³   ³   ³   ³       LoginController copy 2.php
+³   ³   ³   ³       LoginController copy.php
+³   ³   ³   ³       LoginController.php
+³   ³   ³   ³       RegisterController copy.php
+³   ³   ³   ³       RegisterController.php
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄDataCollector
+³   ³   ³   ³       DashboardController copy.php
+³   ³   ³   ³       DashboardController.php
+³   ³   ³   ³       FarmRecordController copy 2.php
+³   ³   ³   ³       FarmRecordController copy 3.php
+³   ³   ³   ³       FarmRecordController copy 4.php
+³   ³   ³   ³       FarmRecordController copy.php
+³   ³   ³   ³       FarmRecordController.php
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄFarmer
+³   ³   ³   ³       DashboardController.php
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄIndividual
+³   ³   ³   ³   ³   DashboardController copy 2.php
+³   ³   ³   ³   ³   DashboardController copy.php
+³   ³   ³   ³   ³   DashboardController.php
+³   ³   ³   ³   ³   ProfileController.php
+³   ³   ³   ³   ³   
+³   ³   ³   ³   ÀÄÄÄlivestock
+³   ³   ³   ³           step1.blade.php
+³   ³   ³   ³           step2.blade.php
+³   ³   ³   ³           
+³   ³   ³   ÃÄÄÄProfessional
+³   ³   ³   ³       DashboardController.php
+³   ³   ³   ³       ProfessionalDashboardController.php
+³   ³   ³   ³       
+³   ³   ³   ÀÄÄÄVolunteer
+³   ³   ³           DashboardController.php
+³   ³   ³           
+³   ³   ÀÄÄÄMiddleware
+³   ³           ApprovedProfessional copy.php
+³   ³           ApprovedProfessional.php
+³   ³           CheckRole.php
+³   ³           RoleMiddleware.php
+³   ³           VerifiedCollectorMiddleware.php
+³   ³           
+³   ÃÄÄÄJobs
+³   ³       SendBulkEmail.php
+³   ³       SendBulkSMS.php
+³   ³       
+³   ÃÄÄÄModels
+³   ³       Ad.php
+³   ³       AdView.php
+³   ³       AlertPreference.php
+³   ³       AnimalHealthProfessional copy.php
+³   ³       AnimalHealthProfessional.php
+³   ³       BulkMessage.php
+³   ³       BulkMessageLog.php
+³   ³       ChatbotConversation.php
+³   ³       ChatbotMessage.php
+³   ³       ChatbotTrainingData.php
+³   ³       ChatConversation.php
+³   ³       ChatMessage.php
+³   ³       ChatMessageReaction.php
+³   ³       ChatParticipant.php
+³   ³       Country.php
+³   ³       DataCollector.php
+³   ³       DataCollectorProfile.php
+³   ³       FarmerEnrollment.php
+³   ³       FarmRecord copy 2.php
+³   ³       FarmRecord copy.php
+³   ³       FarmRecord.php
+³   ³       HerdGroup.php
+³   ³       Lga.php
+³   ³       Livestock.php
+³   ³       OutbreakAlert.php
+³   ³       OutbreakAlertNotification.php
+³   ³       ProfessionalType.php
+³   ³       Reward.php
+³   ³       ServiceArea.php
+³   ³       ServiceRequest.php
+³   ³       Setting.php
+³   ³       SiteContent.php
+³   ³       Specialization.php
+³   ³       State.php
+³   ³       User copy 2.php
+³   ³       User copy 3.php
+³   ³       User copy 4.php
+³   ³       User copy.php
+³   ³       User.php
+³   ³       VaccinationHistory.php
+³   ³       VerificationDocument.php
+³   ³       Volunteer.php
+³   ³       VolunteerStat.php
+³   ³       
+³   ÃÄÄÄProviders
+³   ³       AppServiceProvider.php
+³   ³       
+³   ÀÄÄÄServices
+³           EmailService.php
+³           SmsService.php
+³           
+ÃÄÄÄbootstrap
+³   ³   app copy 2.php
+³   ³   app copy.php
+³   ³   app.php
+³   ³   providers.php
+³   ³   
+³   ÀÄÄÄcache
+³           .gitignore
+³           
+ÃÄÄÄconfig
+³       app.php
+³       auth.php
+³       cache.php
+³       database.php
+³       filesystems.php
+³       logging.php
+³       mail.php
+³       queue.php
+³       services.php
+³       session.php
+³       world.php
+³       
+ÃÄÄÄdatabase
+³   ³   .gitignore
+³   ³   
+³   ÃÄÄÄfactories
+³   ³       UserFactory.php
+³   ³       
+³   ÃÄÄÄmigrations
+³   ³       0001_01_01_000001_create_cache_table.php
+³   ³       0001_01_01_000002_create_jobs_table.php
+³   ³       2014_10_12_000000_create_users_table.php
+³   ³       2014_10_12_100000_create_password_reset_tokens_table.php
+³   ³       2024_01_01_000005_create_data_collectors_table.php
+³   ³       2024_12_06_000001_create_data_collector_profiles_table.php
+³   ³       2024_12_06_000002_create_verification_documents_table.php
+³   ³       2024_12_06_000003_create_farm_records_table.php
+³   ³       2024_12_06_000004_create_livestock_table.php
+³   ³       2024_12_06_000005_create_vaccination_history_table.php
+³   ³       2024_12_06_000006_create_service_requests_table.php
+³   ³       2024_12_06_000007_create_alert_preferences_table.php
+³   ³       2024_12_06_000008_create_sessions_table.php
+³   ³       2024_12_06_100000_add_owner_id_to_livestock_table.php
+³   ³       2024_12_06_210000_add_missing_farm_record_columns_safe.php
+³   ³       2024_12_06_220000_make_alert_preferences_nullable.php
+³   ³       2024_12_07_000000_make_farm_record_id_nullable.php
+³   ³       2024_12_07_emergency_fix_farm_records_columns.php
+³   ³       2024_12_07_make_owner_id_nullable.php
+³   ³       2024_12_15_000001_update_users_role_column.php
+³   ³       2024_12_15_000002_create_animal_health_professionals_table.php
+³   ³       2024_12_15_000003_create_volunteers_table.php
+³   ³       2024_12_15_000004_create_farmer_enrollments_table.php
+³   ³       2024_12_15_000005_migrate_existing_roles_data.php
+³   ³       2025_12_06_165243_add_state_to_farm_records_table.php
+³   ³       2025_12_08_comprehensive_service_requests_fix.php
+³   ³       2025_12_08_fix_service_requests_table.php
+³   ³       2025_12_09_fix_farm_records_nullable_fields.php
+³   ³       2025_12_14_add_columns_to_livestock.php
+³   ³       2025_12_14_add_columns_to_livestock_UPDATED.php
+³   ³       2025_12_14_add_status_to_volunteers.php
+³   ³       2025_12_14_fix_service_requests_table.php
+³   ³       2025_12_14_fix_vaccination_history_table.php
+³   ³       2025_12_14_make_user_id_nullable_in_livestock.php
+³   ³       2025_12_15_fix_all_service_request_enums.php
+³   ³       2025_12_15_fix_service_type_enum.php
+³   ³       2025_12_26_000001_create_settings_table.php
+³   ³       2025_12_26_000002_create_locations_table.php
+³   ³       2025_12_26_000003_create_ads_table.php
+³   ³       2025_12_26_000004_create_outbreak_alerts_table.php
+³   ³       2025_12_26_000005_create_chat_system_table.php
+³   ³       2025_12_26_000006_create_rewards_table.php
+³   ³       2025_12_26_000007_create_professional_types_table.php
+³   ³       2025_12_26_000008_create_bulk_messages_table.php
+³   ³       2025_12_26_000009_create_ai_chatbot_table.php
+³   ³       2025_12_26_000010_create_site_contents_table.php
+³   ³       2025_12_26_000011_add_location_fields_to_users.php
+³   ³       2025_12_26_000012_create_herd_groups_table.php
+³   ³       2025_12_26_013906_enhance_chat_system_for_all_users.php
+³   ³       
+³   ÀÄÄÄseeders
+³           AdminSeeder.php
+³           DatabaseSeeder copy 2.php
+³           DatabaseSeeder copy 3.php
+³           DatabaseSeeder copy 4.php
+³           DatabaseSeeder copy.php
+³           DatabaseSeeder.php
+³           DevelopmentSeeder.php
+³           DummyUsersSeeder.php
+³           LocationSeeder.php
+³           ProfessionalDataSeeder.php
+³           SettingsSeeder.php
+³           SiteContentSeeder.php
+³           WorldSeeder.php
+³           
+ÃÄÄÄlaravel
+³   ³   .editorconfig
+³   ³   .env.example
+³   ³   .gitattributes
+³   ³   .gitignore
+³   ³   artisan
+³   ³   composer.json
+³   ³   composer.lock
+³   ³   package.json
+³   ³   phpunit.xml
+³   ³   README.md
+³   ³   vite.config.js
+³   ³   
+³   ÃÄÄÄapp
+³   ³   ÃÄÄÄHttp
+³   ³   ³   ÀÄÄÄControllers
+³   ³   ³           Controller.php
+³   ³   ³           
+³   ³   ÃÄÄÄModels
+³   ³   ³       User.php
+³   ³   ³       
+³   ³   ÀÄÄÄProviders
+³   ³           AppServiceProvider.php
+³   ³           
+³   ÃÄÄÄbootstrap
+³   ³   ³   app.php
+³   ³   ³   providers.php
+³   ³   ³   
+³   ³   ÀÄÄÄcache
+³   ³           .gitignore
+³   ³           
+³   ÃÄÄÄconfig
+³   ³       app.php
+³   ³       auth.php
+³   ³       cache.php
+³   ³       database.php
+³   ³       filesystems.php
+³   ³       logging.php
+³   ³       mail.php
+³   ³       queue.php
+³   ³       services.php
+³   ³       session.php
+³   ³       
+³   ÃÄÄÄdatabase
+³   ³   ³   .gitignore
+³   ³   ³   
+³   ³   ÃÄÄÄfactories
+³   ³   ³       UserFactory.php
+³   ³   ³       
+³   ³   ÃÄÄÄmigrations
+³   ³   ³       0001_01_01_000000_create_users_table.php
+³   ³   ³       0001_01_01_000001_create_cache_table.php
+³   ³   ³       0001_01_01_000002_create_jobs_table.php
+³   ³   ³       
+³   ³   ÀÄÄÄseeders
+³   ³           DatabaseSeeder.php
+³   ³           
+³   ÃÄÄÄpublic
+³   ³       .htaccess
+³   ³       favicon.ico
+³   ³       index.php
+³   ³       robots.txt
+³   ³       
+³   ÃÄÄÄresources
+³   ³   ÃÄÄÄcss
+³   ³   ³       app.css
+³   ³   ³       
+³   ³   ÃÄÄÄjs
+³   ³   ³       app.js
+³   ³   ³       bootstrap.js
+³   ³   ³       
+³   ³   ÀÄÄÄviews
+³   ³           welcome.blade.php
+³   ³           
+³   ÃÄÄÄroutes
+³   ³       console.php
+³   ³       web.php
+³   ³       
+³   ÃÄÄÄstorage
+³   ³   ÃÄÄÄapp
+³   ³   ³   ³   .gitignore
+³   ³   ³   ³   
+³   ³   ³   ÃÄÄÄprivate
+³   ³   ³   ³       .gitignore
+³   ³   ³   ³       
+³   ³   ³   ÀÄÄÄpublic
+³   ³   ³           .gitignore
+³   ³   ³           
+³   ³   ÃÄÄÄframework
+³   ³   ³   ³   .gitignore
+³   ³   ³   ³   
+³   ³   ³   ÃÄÄÄcache
+³   ³   ³   ³   ³   .gitignore
+³   ³   ³   ³   ³   
+³   ³   ³   ³   ÀÄÄÄdata
+³   ³   ³   ³           .gitignore
+³   ³   ³   ³           
+³   ³   ³   ÃÄÄÄsessions
+³   ³   ³   ³       .gitignore
+³   ³   ³   ³       
+³   ³   ³   ÃÄÄÄtesting
+³   ³   ³   ³       .gitignore
+³   ³   ³   ³       
+³   ³   ³   ÀÄÄÄviews
+³   ³   ³           .gitignore
+³   ³   ³           
+³   ³   ÀÄÄÄlogs
+³   ³           .gitignore
+³   ³           
+³   ÀÄÄÄtests
+³       ³   TestCase.php
+³       ³   
+³       ÃÄÄÄFeature
+³       ³       ExampleTest.php
+³       ³       
+³       ÀÄÄÄUnit
+³               ExampleTest.php
+³               
+ÃÄÄÄpublic
+³   ³   .htaccess
+³   ³   favicon.ico
+³   ³   index.php
+³   ³   robots.txt
+³   ³   
+³   ÃÄÄÄcss
+³   ³       brand-colors.css
+³   ³       farmvax-brand copy.css
+³   ³       farmvax-brand.css
+³   ³       
+³   ÀÄÄÄjs
+³           farmvax-mobile copy.js
+³           farmvax-mobile.js
+³           
+ÃÄÄÄresources
+³   ÃÄÄÄcss
+³   ³       app.css
+³   ³       
+³   ÃÄÄÄjs
+³   ³       app.js
+³   ³       bootstrap.js
+³   ³       
+³   ÃÄÄÄlang
+³   ³   ÀÄÄÄvendor
+³   ³       ÀÄÄÄworld
+³   ³           ÃÄÄÄar
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄaz
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄbn
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄbr
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄde
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄen
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄes
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄfa
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄfr
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄhr
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄhy
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄit
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄja
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄkr
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄne
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄnl
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄpl
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄpt
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄro
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄru
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄsw
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÃÄÄÄtr
+³   ³           ³       country.php
+³   ³           ³       response.php
+³   ³           ³       
+³   ³           ÀÄÄÄzh
+³   ³                   country.php
+³   ³                   response.php
+³   ³                   
+³   ÀÄÄÄviews
+³       ³   welcome.blade copy.php
+³       ³   welcome.blade(1).php
+³       ³   welcome.blade(2).php
+³       ³   welcome.blade.php
+³       ³   
+³       ÃÄÄÄadmin
+³       ³   ³   dashboard.blade(1).php
+³       ³   ³   dashboard.blade.php
+³       ³   ³   statistics.blade(1).php
+³       ³   ³   statistics.blade.php
+³       ³   ³   
+³       ³   ÃÄÄÄads
+³       ³   ³       create.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄbulk-messages
+³       ³   ³       create.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄfarm-records
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄfarmers
+³       ³   ³       index.blade(1).php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄoutbreak-alerts
+³       ³   ³       create.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄpartials
+³       ³   ³       sidebar.blade copy.php
+³       ³   ³       sidebar.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄprofessionals
+³       ³   ³       index.blade(1).php
+³       ³   ³       index.blade.php
+³       ³   ³       pending.blade(1).php
+³       ³   ³       pending.blade.php
+³       ³   ³       review.blade(1).php
+³       ³   ³       review.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄservice-requests
+³       ³   ³       index.blade(1).php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄsettings
+³       ³   ³       ai.blade.php
+³       ³   ³       email.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       professional-types.blade.php
+³       ³   ³       sms.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄsite-builder
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄusers
+³       ³   ³       create.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÀÄÄÄvolunteers
+³       ³           index.blade(1).php
+³       ³           index.blade.php
+³       ³           
+³       ÃÄÄÄauth
+³       ³       login.blade(1).php
+³       ³       login.blade.php
+³       ³       register-data-collector.blade.php
+³       ³       register-farmer.blade.php
+³       ³       register-individual.blade.php
+³       ³       register-professional.blade.php
+³       ³       register-volunteer.blade.php
+³       ³       
+³       ÃÄÄÄchat
+³       ³       index.blade.php
+³       ³       
+³       ÃÄÄÄcomponents
+³       ³       chat-bubble.blade.php
+³       ³       data-collector-sidebar.blade copy.php
+³       ³       data-collector-sidebar.blade.php
+³       ³       mobile_sidebar_component.blade.php
+³       ³       
+³       ÃÄÄÄdata-collector
+³       ³   ³   dashboard.blade copy.php
+³       ³   ³   dashboard.blade.php
+³       ³   ³   pending-approval.blade.php
+³       ³   ³   pending.blade.php
+³       ³   ³   profile.blade.php
+³       ³   ³   
+³       ³   ÃÄÄÄfarm-record
+³       ³   ³       review.blade.php
+³       ³   ³       step1.blade.php
+³       ³   ³       step2.blade.php
+³       ³   ³       step3.blade.php
+³       ³   ³       step4.blade.php
+³       ³   ³       step5.blade.php
+³       ³   ³       step6.blade.php
+³       ³   ³       success.blade.php
+³       ³   ³       
+³       ³   ÀÄÄÄfarm-records
+³       ³           drafts.blade copy.php
+³       ³           drafts.blade.php
+³       ³           index.blade copy 2.php
+³       ³           index.blade copy.php
+³       ³           index.blade.php
+³       ³           profile.blade copy.php
+³       ³           profile.blade.php
+³       ³           show.blade.php
+³       ³           
+³       ÃÄÄÄfarmer
+³       ³   ³   dashboard.blade(1).php
+³       ³   ³   dashboard.blade.php
+³       ³   ³   
+³       ³   ÃÄÄÄfarm-records
+³       ³   ³       step1.blade.php
+³       ³   ³       step2.blade.php
+³       ³   ³       step3.blade.php
+³       ³   ³       step4.blade.php
+³       ³   ³       step5.blade.php
+³       ³   ³       step6.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄlivestock
+³       ³   ³   ³   index.blade(1).php
+³       ³   ³   ³   index.blade.php
+³       ³   ³   ³   
+³       ³   ³   ÀÄÄÄcreate
+³       ³   ³           step1.blade.php
+³       ³   ³           
+³       ³   ÃÄÄÄpartials
+³       ³   ³       sidebar.blade.php
+³       ³   ³       
+³       ³   ÀÄÄÄservice-requests
+³       ³           index.blade.php
+³       ³           
+³       ÃÄÄÄfarmer_old
+³       ³   ³   dashboard.blade.php
+³       ³   ³   
+³       ³   ÃÄÄÄlivestock
+³       ³   ³       create.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       
+³       ³   ÀÄÄÄservice-requests
+³       ³           create.blade.php
+³       ³           index.blade.php
+³       ³           
+³       ÃÄÄÄindividual
+³       ³   ³   dashboard.blade(1).php
+³       ³   ³   dashboard.blade.php
+³       ³   ³   profile.blade.php
+³       ³   ³   
+³       ³   ÃÄÄÄfarm-records
+³       ³   ³       create.blade.php
+³       ³   ³       show.blade.php
+³       ³   ³       step1.blade.php
+³       ³   ³       step2.blade copy.php
+³       ³   ³       step2.blade.php
+³       ³   ³       step3.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄlivestock
+³       ³   ³       index.blade(1).php
+³       ³   ³       index.blade.php
+³       ³   ³       show.blade.php
+³       ³   ³       step1.blade.php
+³       ³   ³       step2.blade.php
+³       ³   ³       step3.blade.php
+³       ³   ³       step4.blade.php
+³       ³   ³       step5.blade.php
+³       ³   ³       step6.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄpartials
+³       ³   ³       mobile-sidebar.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄservice-requests
+³       ³   ³       create.blade.php
+³       ³   ³       index.blade(1).php
+³       ³   ³       index.blade.php
+³       ³   ³       service-request-edit.php
+³       ³   ³       service_request_show.blade.php
+³       ³   ³       
+³       ³   ÀÄÄÄvaccinations
+³       ³           index.blade(1).php
+³       ³           index.blade.php
+³       ³           
+³       ÃÄÄÄlayouts
+³       ³       admin.blade.php
+³       ³       farmer.blade.php
+³       ³       professional.blade.php
+³       ³       volunteer.blade.php
+³       ³       
+³       ÃÄÄÄprofessional
+³       ³   ³   dashboard.blade.php
+³       ³   ³   pending-approval.blade copy 2.php
+³       ³   ³   pending-approval.blade copy.php
+³       ³   ³   pending-approval.blade.php
+³       ³   ³   profile.blade.php
+³       ³   ³   service-requests.blade.php
+³       ³   ³   
+³       ³   ÃÄÄÄfarm-records
+³       ³   ³       farm-records.blade(1).php
+³       ³   ³       farm-records.blade(2).php
+³       ³   ³       farm-records.blade.php
+³       ³   ³       index.blade.php
+³       ³   ³       service-requests.blade(1).php
+³       ³   ³       service-requests.blade(2).php
+³       ³   ³       service-requests.blade.php
+³       ³   ³       
+³       ³   ÃÄÄÄpartials
+³       ³   ³       sidebar.blade.php
+³       ³   ³       
+³       ³   ÀÄÄÄservice-requests
+³       ³           index.blade.php
+³       ³           
+³       ÀÄÄÄvolunteer
+³           ³   activity.blade.php
+³           ³   dashboard.blade copy.php
+³           ³   dashboard.blade.php
+³           ³   enroll-farmer.blade.php
+³           ³   my-farmers.blade.php
+³           ³   profile.blade.php
+³           ³   
+³           ÀÄÄÄpartials
+³                   sidebar.blade.php
+³                   
+ÃÄÄÄroutes
+³       api.php
+³       console.php
+³       web copy 2.php
+³       web copy.php
+³       web.php
+³       webold.php
+³       
+ÃÄÄÄstorage
+³   ÃÄÄÄapp
+³   ³   ³   .gitignore
+³   ³   ³   
+³   ³   ÃÄÄÄprivate
+³   ³   ³       .gitignore
+³   ³   ³       
+³   ³   ÀÄÄÄpublic
+³   ³           .gitignore
+³   ³           
+³   ÃÄÄÄframework
+³   ³   ³   .gitignore
+³   ³   ³   
+³   ³   ÃÄÄÄcache
+³   ³   ³   ³   .gitignore
+³   ³   ³   ³   
+³   ³   ³   ÀÄÄÄdata
+³   ³   ³           .gitignore
+³   ³   ³           
+³   ³   ÃÄÄÄsessions
+³   ³   ³       .gitignore
+³   ³   ³       
+³   ³   ÃÄÄÄtesting
+³   ³   ³       .gitignore
+³   ³   ³       
+³   ³   ÀÄÄÄviews
+³   ³           .gitignore
+³   ³           
+³   ÀÄÄÄlogs
+³           .gitignore
+³           
+ÃÄÄÄtests
+³   ³   TestCase.php
+³   ³   
+³   ÃÄÄÄFeature
+³   ³       ExampleTest.php
+³   ³       
+³   ÀÄÄÄUnit
+³           ExampleTest.php
+³           
+ÃÄÄÄtests copy
+³   ³   TestCase.php
+³   ³   
+³   ÃÄÄÄFeature
+³   ³       ExampleTest.php
+³   ³       
+³   ÀÄÄÄUnit
+³           ExampleTest.php
+³           
+ÀÄÄÄtests copy 2
+    ³   TestCase.php
+    ³   
+    ÃÄÄÄFeature
+    ³       ExampleTest.php
+    ³       
+    ÀÄÄÄUnit
+            ExampleTest.php
+            

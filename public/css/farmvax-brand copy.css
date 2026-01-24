@@ -1,0 +1,427 @@
+/* ============================================
+   FARMVAX BRAND STYLING - CLEAN & SEPARATED
+   ============================================
+   
+   Brand Colors:
+   - Primary Green: #61CE70 (Backgrounds, Icons, Accent)
+   - Dark Teal: #058283 (Text, Headings, Secondary)
+   
+   Design: Clean, Professional, NO gradients
+   ============================================ */
+
+/* ============================================
+   1. PRIMARY BRAND COLOR - GREEN #61CE70
+   ============================================ */
+
+/* Sidebar Background */
+.bg-purple-800,
+.bg-purple-900 {
+    background-color: #61CE70 !important;
+}
+
+/* Primary Buttons */
+.bg-purple-600,
+.bg-green-600,
+.bg-green-500 {
+    background-color: #61CE70 !important;
+    color: white !important;
+}
+
+/* Hover States - Darker Green */
+.hover\:bg-purple-700:hover,
+.hover\:bg-purple-800:hover,
+.hover\:bg-green-600:hover,
+.hover\:bg-green-700:hover {
+    background-color: #50BD5F !important;
+}
+
+/* Active Navigation Items */
+nav a.bg-purple-900,
+.bg-purple-700 {
+    background-color: #61CE70 !important;
+    color: white !important;
+}
+
+/* Icon Backgrounds (like circles in your image) */
+.bg-purple-500 {
+    background-color: #61CE70 !important;
+}
+
+/* ============================================
+   2. SECONDARY BRAND COLOR - TEAL #058283
+   ============================================ */
+
+/* Headings and Important Text */
+.text-purple-600,
+.text-purple-900,
+.text-blue-600,
+.text-blue-800 {
+    color: #058283 !important;
+}
+
+/* Secondary Buttons */
+.bg-blue-600,
+.bg-blue-700,
+.bg-blue-800 {
+    background-color: #058283 !important;
+    color: white !important;
+}
+
+/* Hover States - Darker Teal */
+.hover\:bg-blue-700:hover,
+.hover\:bg-blue-800:hover {
+    background-color: #047172 !important;
+}
+
+/* Borders */
+.border-purple-200,
+.border-purple-300 {
+    border-color: #61CE70 !important;
+}
+
+/* ============================================
+   3. TEXT COLORS
+   ============================================ */
+
+/* Light text on dark backgrounds */
+.text-purple-100 {
+    color: #ffffff !important;
+}
+
+/* Green text for accents */
+.text-green-600,
+.text-green-700 {
+    color: #61CE70 !important;
+}
+
+/* Green success messages */
+.text-green-800 {
+    color: #61CE70 !important;
+}
+
+/* ============================================
+   4. LOGO & SIDEBAR STYLING
+   ============================================ */
+
+/* Logo Section - Solid Green */
+.flex.items-center.h-16.flex-shrink-0.px-4 {
+    background-color: #61CE70 !important;
+}
+
+/* Logo Text */
+.text-xl.font-bold {
+    color: white !important;
+}
+
+/* Sidebar Navigation */
+nav a {
+    transition: all 0.2s ease !important;
+}
+
+nav a:hover {
+    background-color: rgba(97, 206, 112, 0.2) !important;
+}
+
+/* ============================================
+   5. BUTTONS - CLEAN STYLE
+   ============================================ */
+
+/* Primary Green Buttons */
+button[class*="bg-purple"],
+button[class*="bg-green"],
+.btn-primary {
+    background-color: #61CE70 !important;
+    color: white !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+}
+
+button[class*="bg-purple"]:hover,
+button[class*="bg-green"]:hover,
+.btn-primary:hover {
+    background-color: #50BD5F !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(97, 206, 112, 0.2) !important;
+}
+
+/* Secondary Teal Buttons */
+button[class*="bg-blue"] {
+    background-color: #058283 !important;
+    color: white !important;
+}
+
+button[class*="bg-blue"]:hover {
+    background-color: #047172 !important;
+}
+
+/* ============================================
+   6. CARDS & COMPONENTS
+   ============================================ */
+
+/* White Cards */
+.bg-white {
+    background-color: white !important;
+    transition: all 0.3s ease;
+}
+
+.bg-white:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Icon Circle Backgrounds (like in your image) */
+.flex-shrink-0.rounded-md {
+    background-color: #61CE70 !important;
+}
+
+/* Stat Cards Icon Backgrounds */
+.stat-icon-bg {
+    background-color: #61CE70 !important;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+/* ============================================
+   7. FORM ELEMENTS
+   ============================================ */
+
+/* Input Focus - Green Border */
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #61CE70 !important;
+    box-shadow: 0 0 0 3px rgba(97, 206, 112, 0.1) !important;
+    outline: none !important;
+}
+
+/* ============================================
+   8. TABLES
+   ============================================ */
+
+/* Table Hover - Light Green */
+tbody tr:hover {
+    background-color: rgba(97, 206, 112, 0.05) !important;
+}
+
+/* Table Headers */
+thead {
+    background-color: #f9fafb !important;
+}
+
+/* ============================================
+   9. BADGES & TAGS
+   ============================================ */
+
+/* Success Badge - Green */
+.bg-green-50 {
+    background-color: rgba(97, 206, 112, 0.1) !important;
+    border-color: #61CE70 !important;
+}
+
+/* Warning Badge */
+.bg-yellow-500 {
+    background-color: #FFA500 !important;
+}
+
+/* Danger Badge */
+.bg-red-500,
+.bg-red-600 {
+    background-color: #EF4444 !important;
+}
+
+/* ============================================
+   10. MOBILE HAMBURGER MENU
+   ============================================ */
+
+.mobile-menu-button {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    background-color: #61CE70 !important;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(97, 206, 112, 0.3);
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-button:hover {
+    background-color: #50BD5F !important;
+    transform: scale(1.05);
+}
+
+.mobile-menu-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* ============================================
+   11. RESPONSIVE DESIGN
+   ============================================ */
+
+aside {
+    transition: transform 0.3s ease-in-out;
+}
+
+@media (max-width: 768px) {
+    /* Show hamburger */
+    .mobile-menu-button {
+        display: block;
+    }
+
+    /* Hide sidebar by default */
+    aside {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 999;
+        transform: translateX(-100%);
+    }
+
+    /* Show sidebar when active */
+    aside.mobile-menu-active {
+        transform: translateX(0);
+    }
+
+    /* Adjust header for mobile */
+    header {
+        padding-left: 4rem !important;
+    }
+
+    header h1 {
+        font-size: 1.25rem !important;
+    }
+
+    header p {
+        font-size: 0.75rem !important;
+    }
+
+    /* Adjust main content */
+    main {
+        padding: 1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Very small screens */
+    header h1 {
+        font-size: 1rem !important;
+    }
+
+    .stat-card dt {
+        font-size: 0.75rem !important;
+    }
+}
+
+/* ============================================
+   12. UTILITY CLASSES
+   ============================================ */
+
+/* Brand Colors */
+.brand-green {
+    color: #61CE70 !important;
+}
+
+.brand-teal {
+    color: #058283 !important;
+}
+
+.bg-brand-green {
+    background-color: #61CE70 !important;
+}
+
+.bg-brand-teal {
+    background-color: #058283 !important;
+}
+
+/* Brand Shadows */
+.brand-shadow {
+    box-shadow: 0 4px 8px rgba(97, 206, 112, 0.2) !important;
+}
+
+/* ============================================
+   13. ANIMATIONS
+   ============================================ */
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.mobile-menu-active {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Smooth transitions */
+a, button, input, select, textarea {
+    transition: all 0.2s ease;
+}
+
+/* ============================================
+   14. ACCESSIBILITY
+   ============================================ */
+
+*:focus-visible {
+    outline: 2px solid #61CE70 !important;
+    outline-offset: 2px !important;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .bg-brand-green,
+    .bg-purple-800 {
+        background-color: #50BD5F !important;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   15. PRINT STYLES
+   ============================================ */
+
+@media print {
+    .mobile-menu-button,
+    aside,
+    .mobile-overlay {
+        display: none !important;
+    }
+    
+    main {
+        margin: 0 !important;
+        padding: 1rem !important;
+    }
+}

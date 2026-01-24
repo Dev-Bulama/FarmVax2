@@ -1,0 +1,156 @@
+/* 
+ * FarmVax Brand Colors
+ * Include this file in all Blade templates
+ * Usage: <link rel="stylesheet" href="{{ asset('css/brand-colors.css') }}">
+ */
+
+:root {
+    --primary: #11455B;
+    --secondary: #2FCB6E;
+    --primary-light: rgba(17, 69, 91, 0.1);
+    --secondary-light: rgba(47, 203, 110, 0.1);
+}
+
+/* Background Colors */
+.bg-primary { background-color: var(--primary) !important; }
+.bg-secondary { background-color: var(--secondary) !important; }
+.bg-primary-light { background-color: var(--primary-light) !important; }
+.bg-secondary-light { background-color: var(--secondary-light) !important; }
+
+/* Text Colors */
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--secondary) !important; }
+
+/* Border Colors */
+.border-primary { border-color: var(--primary) !important; }
+.border-secondary { border-color: var(--secondary) !important; }
+
+/* Hover States */
+.hover-primary:hover { background-color: var(--primary) !important; }
+.hover-secondary:hover { background-color: var(--secondary) !important; }
+
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+}
+
+.bg-gradient-secondary {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%) !important;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: var(--secondary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.btn-gradient {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(47, 203, 110, 0.3);
+}
+
+/* Focus States */
+.focus-primary:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.focus-secondary:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 3px var(--secondary-light);
+}
+
+/* Card Hover Effects */
+.card-hover-primary {
+    transition: all 0.3s ease;
+}
+
+.card-hover-primary:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(17, 69, 91, 0.15);
+}
+
+.card-hover-secondary {
+    transition: all 0.3s ease;
+}
+
+.card-hover-secondary:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(47, 203, 110, 0.15);
+}
+
+/* Badge Styles */
+.badge-primary {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-secondary {
+    background-color: var(--secondary-light);
+    color: var(--secondary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Link Styles */
+.link-primary {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link-primary:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+}
+
+.link-secondary {
+    color: var(--secondary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link-secondary:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
