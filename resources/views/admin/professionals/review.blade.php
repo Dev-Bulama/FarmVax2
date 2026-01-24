@@ -152,23 +152,82 @@
                 <h3 class="text-lg font-bold text-gray-900">Uploaded Documents</h3>
             </div>
             <div class="p-6">
-                @if($professional->verification_documents && is_array($professional->verification_documents) && count($professional->verification_documents) > 0)
+                @php
+                    // Get documents from both sources (relationship and JSON field)
+                    $documents = collect();
+
+                    // Add documents from verification_documents relationship
+                    if($professional->verificationDocuments && $professional->verificationDocuments->count() > 0) {
+                        $documents = $documents->merge($professional->verificationDocuments);
+                    }
+
+                    // Add documents from JSON field (legacy support)
+                    if($professional->verification_documents && is_array($professional->verification_documents) && count($professional->verification_documents) > 0) {
+                        foreach($professional->verification_documents as $doc) {
+                            $documents->push((object)[
+                                'document_type' => $doc['type'] ?? 'Document',
+                                'document_name' => $doc['file_name'] ?? 'Uploaded file',
+                                'file_path' => $doc['file_path'] ?? null,
+                                'created_at' => isset($doc['uploaded_at']) ? \Carbon\Carbon::parse($doc['uploaded_at']) : null,
+                                'file_size' => $doc['file_size'] ?? null,
+                                'verification_status' => $doc['status'] ?? 'pending',
+                            ]);
+                        }
+                    }
+                @endphp
+
+                @if($documents->count() > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach($professional->verification_documents as $document)
+                        @foreach($documents as $document)
                             <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition">
                                 <div class="flex items-start">
-                                    <svg class="h-10 w-10 text-blue-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    @php
+                                        // Determine file icon based on file type
+                                        $fileType = $document->file_type ?? pathinfo($document->file_path ?? '', PATHINFO_EXTENSION);
+                                        $iconColor = match(strtolower($fileType)) {
+                                            'pdf' => 'text-red-500',
+                                            'jpg', 'jpeg', 'png', 'gif' => 'text-green-500',
+                                            'doc', 'docx' => 'text-blue-500',
+                                            default => 'text-gray-500'
+                                        };
+                                    @endphp
+                                    <svg class="h-10 w-10 {{ $iconColor }} mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
                                     <div class="flex-1">
-                                        <h4 class="text-sm font-semibold text-gray-900">{{ $document['type'] ?? 'Document' }}</h4>
-                                        <p class="text-xs text-gray-500 mt-1">{{ $document['file_name'] ?? 'Uploaded file' }}</p>
-                                        <p class="text-xs text-gray-400 mt-1">{{ isset($document['uploaded_at']) ? \Carbon\Carbon::parse($document['uploaded_at'])->format('M d, Y') : '' }}</p>
-                                        @if(isset($document['file_path']))
-                                            <a href="{{ asset('storage/' . $document['file_path']) }}" target="_blank" 
-                                               class="text-blue-600 hover:text-blue-800 text-xs font-semibold mt-2 inline-block">
-                                                View Document →
-                                            </a>
+                                        <h4 class="text-sm font-semibold text-gray-900">{{ $document->document_type ?? 'Document' }}</h4>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $document->document_name ?? 'Uploaded file' }}</p>
+
+                                        @if($document->file_size ?? null)
+                                            <p class="text-xs text-gray-400 mt-1">Size: {{ is_object($document) && method_exists($document, 'getFileSizeHumanAttribute') ? $document->file_size_human : number_format($document->file_size / 1024, 2) . ' KB' }}</p>
+                                        @endif
+
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            Uploaded: {{ $document->created_at ? $document->created_at->format('M d, Y') : 'N/A' }}
+                                        </p>
+
+                                        @if($document->verification_status ?? null)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-2
+                                                {{ $document->verification_status == 'verified' ? 'bg-green-100 text-green-800' : '' }}
+                                                {{ $document->verification_status == 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                {{ $document->verification_status == 'rejected' ? 'bg-red-100 text-red-800' : '' }}">
+                                                {{ ucfirst($document->verification_status) }}
+                                            </span>
+                                        @endif
+
+                                        @if($document->file_path)
+                                            <div class="mt-2 space-x-2">
+                                                <a href="{{ asset('storage/' . $document->file_path) }}" target="_blank"
+                                                   class="text-blue-600 hover:text-blue-800 text-xs font-semibold inline-block">
+                                                    View Document →
+                                                </a>
+                                                <a href="{{ asset('storage/' . $document->file_path) }}" download
+                                                   class="text-gray-600 hover:text-gray-800 text-xs font-semibold inline-block">
+                                                    Download ↓
+                                                </a>
+                                            </div>
+                                        @else
+                                            <p class="text-xs text-red-500 mt-2">⚠ File path not available</p>
                                         @endif
                                     </div>
                                 </div>

@@ -24,7 +24,18 @@ use App\Http\Controllers\Admin\VolunteerController;
 */
 
 // Welcome Page & Authentication
-Route::get('/', fn() => view('welcome'))->name('home');
+Route::get('/', function() {
+    // Get real-time statistics
+    $stats = [
+        'farmers' => \App\Models\User::where('role', 'farmer')->where('is_active', true)->count(),
+        'professionals' => \App\Models\AnimalHealthProfessional::where('approval_status', 'approved')->count(),
+        'livestock' => \App\Models\Livestock::count(),
+        'farm_records' => \App\Models\FarmRecord::count(),
+        'vaccinations' => \App\Models\VaccinationHistory::count(),
+    ];
+
+    return view('welcome', compact('stats'));
+})->name('home');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -285,10 +296,15 @@ Route::post('/api/reverse-geocode', function (Request $request) {
 */
 
 Route::middleware(['auth'])->prefix('farmer')->name('farmer.')->group(function () {
-    
+
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Farmer\DashboardController::class, 'index'])->name('dashboard');
-    
+
+    // Help & Support
+    Route::get('/help', function() {
+        return view('farmer.help');
+    })->name('help');
+
     // Farm Records - 3 Step Form
     Route::prefix('farm-records')->name('farm-records.')->group(function () {
         
@@ -424,6 +440,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/settings/email', [SettingsController::class, 'updateEmail'])->name('settings.email.update');
     Route::get('/settings/sms', [SettingsController::class, 'sms'])->name('settings.sms');
     Route::put('/settings/sms', [SettingsController::class, 'updateSms'])->name('settings.sms.update');
+    Route::post('/settings/sms/test', [SettingsController::class, 'testSms'])->name('settings.sms.test');
+    Route::post('/settings/email/test', [SettingsController::class, 'testEmail'])->name('settings.email.test');
     Route::get('/settings/ai', [SettingsController::class, 'ai'])->name('settings.ai');
     Route::put('/settings/ai', [SettingsController::class, 'updateAi'])->name('settings.ai.update');
     Route::get('/settings/professional-types', [SettingsController::class, 'professionalTypes'])->name('settings.professional-types');
@@ -556,6 +574,16 @@ Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroy
     Route::get('/site-builder', function() {
         return view('admin.site-builder.index');
     })->name('site-builder.index');
+
+    // System Updates & Version Management
+    Route::prefix('system-updates')->name('system-updates.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SystemUpdateController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\SystemUpdateController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\SystemUpdateController::class, 'store'])->name('store');
+        Route::get('/{id}', [App\Http\Controllers\Admin\SystemUpdateController::class, 'show'])->name('show');
+        Route::post('/{id}/apply', [App\Http\Controllers\Admin\SystemUpdateController::class, 'apply'])->name('apply');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\SystemUpdateController::class, 'destroy'])->name('destroy');
+    });
 
 // Import/Export/Backup Routes
     Route::get('/import-export', [App\Http\Controllers\Admin\ImportExportController::class, 'index'])->name('import-export.index');

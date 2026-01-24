@@ -217,11 +217,12 @@ class ProfessionalApprovalController extends Controller
     public function show($id)
     {
         $professional = AnimalHealthProfessional::with([
-            'user.country', 
-            'user.state', 
-            'user.lga'
+            'user.country',
+            'user.state',
+            'user.lga',
+            'verificationDocuments'
         ])->findOrFail($id);
-        
+
         return view('admin.professionals.review', compact('professional'));
     }
 }
