@@ -215,31 +215,76 @@ public function send($id)
         $successCount = 0;
         $failedCount = 0;
 
+        $smsService = new \App\Services\SmsService();
+        $emailService = new \App\Services\EmailService();
+
         foreach ($recipients as $user) {
-            try {
-                // Create log entry
-                BulkMessageLog::create([
-                    'bulk_message_id' => $bulkMessage->id,
-                    'user_id' => $user->id,
-                    'status' => 'sent',
-                    'sent_at' => now(),
-                ]);
+            // Send via SMS
+            if (in_array($bulkMessage->type, ['sms', 'both']) && $user->phone) {
+                try {
+                    $result = $smsService->send($user->phone, $bulkMessage->message);
 
-                // TODO: Actually send SMS/Email here
-                // Integrate with your SMS/Email service provider
-                // Example: Mail::to($user->email)->send(new BulkMessageMail($bulkMessage));
-                // Example: SMS::send($user->phone, $bulkMessage->message);
+                    BulkMessageLog::create([
+                        'bulk_message_id' => $bulkMessage->id,
+                        'user_id' => $user->id,
+                        'channel' => 'sms',
+                        'status' => $result['success'] ? 'sent' : 'failed',
+                        'error_message' => $result['success'] ? null : ($result['error'] ?? 'Unknown error'),
+                        'sent_at' => now(),
+                    ]);
 
-                $successCount++;
-            } catch (\Exception $e) {
-                BulkMessageLog::create([
-                    'bulk_message_id' => $bulkMessage->id,
-                    'user_id' => $user->id,
-                    'status' => 'failed',
-                    'error_message' => $e->getMessage(),
-                    'sent_at' => now(),
-                ]);
-                $failedCount++;
+                    if ($result['success']) {
+                        $successCount++;
+                    } else {
+                        $failedCount++;
+                    }
+                } catch (\Exception $e) {
+                    BulkMessageLog::create([
+                        'bulk_message_id' => $bulkMessage->id,
+                        'user_id' => $user->id,
+                        'channel' => 'sms',
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                        'sent_at' => now(),
+                    ]);
+                    $failedCount++;
+                }
+            }
+
+            // Send via Email
+            if (in_array($bulkMessage->type, ['email', 'both']) && $user->email) {
+                try {
+                    $result = $emailService->send(
+                        $user->email,
+                        $bulkMessage->title,
+                        $bulkMessage->message
+                    );
+
+                    BulkMessageLog::create([
+                        'bulk_message_id' => $bulkMessage->id,
+                        'user_id' => $user->id,
+                        'channel' => 'email',
+                        'status' => $result['success'] ? 'sent' : 'failed',
+                        'error_message' => $result['success'] ? null : ($result['error'] ?? 'Unknown error'),
+                        'sent_at' => now(),
+                    ]);
+
+                    if ($result['success']) {
+                        $successCount++;
+                    } else {
+                        $failedCount++;
+                    }
+                } catch (\Exception $e) {
+                    BulkMessageLog::create([
+                        'bulk_message_id' => $bulkMessage->id,
+                        'user_id' => $user->id,
+                        'channel' => 'email',
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                        'sent_at' => now(),
+                    ]);
+                    $failedCount++;
+                }
             }
         }
 
@@ -247,7 +292,7 @@ public function send($id)
         $bulkMessage->update([
             'status' => 'sent',
             'sent_at' => now(),
-            'success_count' => $successCount,
+            'sent_count' => $successCount,
             'failed_count' => $failedCount,
         ]);
     }

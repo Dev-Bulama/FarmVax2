@@ -377,4 +377,77 @@ public function destroyAiTraining($id)
 
     return back()->with('success', 'Training data deleted!');
 }
+
+/**
+ * Test SMS configuration
+ */
+public function testSms(Request $request)
+{
+    $validated = $request->validate([
+        'test_phone' => 'required|string',
+    ]);
+
+    try {
+        $smsService = new \App\Services\SmsService();
+        $result = $smsService->send(
+            $validated['test_phone'],
+            'Test message from FarmVax. Your SMS configuration is working correctly!'
+        );
+
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Test SMS sent successfully to ' . $validated['test_phone'],
+                'provider' => $result['provider'] ?? 'unknown'
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send SMS: ' . ($result['error'] ?? 'Unknown error')
+            ], 400);
+        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Test Email configuration
+ */
+public function testEmail(Request $request)
+{
+    $validated = $request->validate([
+        'test_email' => 'required|email',
+    ]);
+
+    try {
+        $emailService = new \App\Services\EmailService();
+        $result = $emailService->send(
+            $validated['test_email'],
+            'Test Email from FarmVax',
+            '<h2>Test Email</h2><p>Your email configuration is working correctly!</p><p>This is a test message from FarmVax system.</p>'
+        );
+
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Test email sent successfully to ' . $validated['test_email'],
+                'provider' => $result['provider'] ?? 'unknown'
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . ($result['error'] ?? 'Unknown error')
+            ], 400);
+        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }

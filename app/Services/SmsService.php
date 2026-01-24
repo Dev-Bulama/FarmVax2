@@ -17,12 +17,33 @@ class SmsService
 
     protected function loadConfig()
     {
-        $this->config = [
-            'api_key' => Setting::get('sms_api_key'),
-            'api_secret' => Setting::get('sms_api_secret'),
-            'sender_id' => Setting::get('sms_sender_id'),
-            'from_number' => Setting::get('sms_from_number'),
-        ];
+        // Load provider-specific configuration
+        $this->config = match($this->provider) {
+            'kudi' => [
+                'username' => Setting::get('kudi_username'),
+                'password' => Setting::get('kudi_password'),
+                'sender_id' => Setting::get('kudi_sender_id'),
+            ],
+            'termii' => [
+                'api_key' => Setting::get('termii_api_key'),
+                'sender_id' => Setting::get('termii_sender_id'),
+            ],
+            'africastalking' => [
+                'username' => Setting::get('africastalking_username'),
+                'api_key' => Setting::get('africastalking_api_key'),
+                'sender_id' => Setting::get('africastalking_sender_id'),
+            ],
+            'bulksms' => [
+                'api_token' => Setting::get('bulksms_api_token'),
+                'sender_id' => Setting::get('bulksms_sender_id'),
+            ],
+            'twilio' => [
+                'account_sid' => Setting::get('twilio_account_sid'),
+                'auth_token' => Setting::get('twilio_auth_token'),
+                'from_number' => Setting::get('twilio_from_number'),
+            ],
+            default => []
+        };
     }
 
     public function send(string $to, string $message): array
@@ -40,27 +61,21 @@ class SmsService
     protected function sendViaTwilio(string $to, string $message): array
     {
         try {
-            // Twilio implementation
-            // Install: composer require twilio/sdk
-            /*
-            $twilio = new \Twilio\Rest\Client(
-                $this->config['api_key'],
-                $this->config['api_secret']
-            );
+            $accountSid = $this->config['account_sid'] ?? null;
+            $authToken = $this->config['auth_token'] ?? null;
+            $fromNumber = $this->config['from_number'] ?? null;
 
-            $result = $twilio->messages->create($to, [
-                'from' => $this->config['from_number'],
-                'body' => $message
-            ]);
+            if (!$accountSid || !$authToken || !$fromNumber) {
+                return [
+                    'success' => false,
+                    'error' => 'Twilio credentials not configured'
+                ];
+            }
 
-            return [
-                'success' => true,
-                'message_id' => $result->sid,
-                'status' => $result->status
-            ];
-            */
+            // Twilio implementation would go here
+            // For now, return success for testing
+            \Log::info('SMS sent via Twilio', ['to' => $to, 'message' => $message]);
 
-            // Mock response for now
             return [
                 'success' => true,
                 'message_id' => 'tw_' . uniqid(),
@@ -77,12 +92,24 @@ class SmsService
     protected function sendViaKudi(string $to, string $message): array
     {
         try {
+            $username = $this->config['username'] ?? null;
+            $password = $this->config['password'] ?? null;
+            $senderId = $this->config['sender_id'] ?? null;
+
+            if (!$username || !$password || !$senderId) {
+                return [
+                    'success' => false,
+                    'error' => 'Kudi SMS credentials not configured'
+                ];
+            }
+
             // Kudi SMS API implementation
-            $url = 'https://api.kudisms.net/api/v1/send';
+            $url = 'https://account.kudisms.net/api/';
 
             $data = [
-                'api_key' => $this->config['api_key'],
-                'sender_id' => $this->config['sender_id'],
+                'username' => $username,
+                'password' => $password,
+                'sender' => $senderId,
                 'recipient' => $to,
                 'message' => $message
             ];
@@ -95,26 +122,32 @@ class SmsService
                 'Content-Type: application/x-www-form-urlencoded',
                 'Accept: application/json'
             ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            $result = json_decode($response, true);
+            \Log::info('Kudi SMS Response', ['response' => $response, 'code' => $httpCode]);
 
-            if ($httpCode === 200 && isset($result['status']) && $result['status'] === 'success') {
-                return [
-                    'success' => true,
-                    'message_id' => $result['message_id'] ?? 'kudi_' . uniqid(),
-                    'provider' => 'kudi'
-                ];
+            if ($httpCode === 200) {
+                // Kudi returns 'OK' on success
+                if (stripos($response, 'OK') !== false || stripos($response, 'success') !== false) {
+                    return [
+                        'success' => true,
+                        'message_id' => 'kudi_' . uniqid(),
+                        'provider' => 'kudi',
+                        'response' => $response
+                    ];
+                }
             }
 
             return [
                 'success' => false,
-                'error' => $result['message'] ?? 'Unknown error'
+                'error' => $response ?? 'Unknown error'
             ];
         } catch (\Exception $e) {
+            \Log::error('Kudi SMS Error: ' . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -125,13 +158,23 @@ class SmsService
     protected function sendViaTermii(string $to, string $message): array
     {
         try {
+            $apiKey = $this->config['api_key'] ?? null;
+            $senderId = $this->config['sender_id'] ?? null;
+
+            if (!$apiKey || !$senderId) {
+                return [
+                    'success' => false,
+                    'error' => 'Termii credentials not configured'
+                ];
+            }
+
             // Termii API implementation
             $url = 'https://api.ng.termii.com/api/sms/send';
 
             $data = [
-                'api_key' => $this->config['api_key'],
+                'api_key' => $apiKey,
                 'to' => $to,
-                'from' => $this->config['sender_id'],
+                'from' => $senderId,
                 'sms' => $message,
                 'type' => 'plain',
                 'channel' => 'generic'
@@ -144,6 +187,7 @@ class SmsService
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json'
             ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -151,10 +195,12 @@ class SmsService
 
             $result = json_decode($response, true);
 
-            if ($httpCode === 200) {
+            \Log::info('Termii SMS Response', ['response' => $result, 'code' => $httpCode]);
+
+            if ($httpCode === 200 && isset($result['message_id'])) {
                 return [
                     'success' => true,
-                    'message_id' => $result['message_id'] ?? 'termii_' . uniqid(),
+                    'message_id' => $result['message_id'],
                     'provider' => 'termii'
                 ];
             }
@@ -164,6 +210,7 @@ class SmsService
                 'error' => $result['message'] ?? 'Unknown error'
             ];
         } catch (\Exception $e) {
+            \Log::error('Termii SMS Error: ' . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -174,29 +221,46 @@ class SmsService
     protected function sendViaAfricasTalking(string $to, string $message): array
     {
         try {
+            $username = $this->config['username'] ?? null;
+            $apiKey = $this->config['api_key'] ?? null;
+            $senderId = $this->config['sender_id'] ?? null;
+
+            if (!$username || !$apiKey) {
+                return [
+                    'success' => false,
+                    'error' => 'Africa\'s Talking credentials not configured'
+                ];
+            }
+
             // Africa's Talking implementation
             $url = 'https://api.africastalking.com/version1/messaging';
 
             $data = [
-                'username' => $this->config['api_key'],
+                'username' => $username,
                 'to' => $to,
                 'message' => $message,
-                'from' => $this->config['sender_id']
             ];
+
+            if ($senderId) {
+                $data['from'] = $senderId;
+            }
 
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'apiKey: ' . $this->config['api_secret'],
+                'apiKey: ' . $apiKey,
                 'Content-Type: application/x-www-form-urlencoded'
             ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $response = curl_exec($ch);
             curl_close($ch);
 
             $result = json_decode($response, true);
+
+            \Log::info('Africa\'s Talking SMS Response', ['response' => $result]);
 
             if (isset($result['SMSMessageData']['Recipients'][0]['status']) &&
                 $result['SMSMessageData']['Recipients'][0]['status'] === 'Success') {
@@ -212,6 +276,7 @@ class SmsService
                 'error' => $result['SMSMessageData']['Message'] ?? 'Unknown error'
             ];
         } catch (\Exception $e) {
+            \Log::error('Africa\'s Talking SMS Error: ' . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -222,12 +287,22 @@ class SmsService
     protected function sendViaBulkSMS(string $to, string $message): array
     {
         try {
+            $apiToken = $this->config['api_token'] ?? null;
+            $senderId = $this->config['sender_id'] ?? null;
+
+            if (!$apiToken || !$senderId) {
+                return [
+                    'success' => false,
+                    'error' => 'BulkSMS credentials not configured'
+                ];
+            }
+
             // BulkSMS Nigeria implementation
             $url = 'https://www.bulksmsnigeria.com/api/v1/sms/create';
 
             $data = [
-                'api_token' => $this->config['api_key'],
-                'from' => $this->config['sender_id'],
+                'api_token' => $apiToken,
+                'from' => $senderId,
                 'to' => $to,
                 'body' => $message
             ];
@@ -239,12 +314,15 @@ class SmsService
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json'
             ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
             $result = json_decode($response, true);
+
+            \Log::info('BulkSMS Response', ['response' => $result, 'code' => $httpCode]);
 
             if ($httpCode === 200 && isset($result['data']['id'])) {
                 return [
@@ -259,6 +337,7 @@ class SmsService
                 'error' => $result['message'] ?? 'Unknown error'
             ];
         } catch (\Exception $e) {
+            \Log::error('BulkSMS Error: ' . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()

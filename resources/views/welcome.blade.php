@@ -184,15 +184,15 @@ Real‑time vaccine and outbreak notifications for farmers and veterinary profes
 
                     <div class="flex flex-wrap items-center gap-8 pt-8 border-t border-gray-200 whitespace-nowrap">
                         <div class="text-center">
-                            <div class="text-3xl font-black text-secondary">5K</div>
+                            <div class="text-3xl font-black text-secondary" id="farmers-count">{{ number_format($stats['farmers'] ?? 0) }}</div>
                             <div class="text-sm text-primary">Active Farmers</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-black text-secondary">1K</div>
+                            <div class="text-3xl font-black text-secondary" id="professionals-count">{{ number_format($stats['professionals'] ?? 0) }}</div>
                             <div class="text-sm text-primary">Active Professionals</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-3xl font-black text-secondary">50k</div>
+                            <div class="text-3xl font-black text-secondary" id="livestock-count">{{ number_format($stats['livestock'] ?? 0) }}</div>
                             <div class="text-sm text-primary">Total Livestock</div>
                         </div>
                     </div>
