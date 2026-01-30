@@ -509,6 +509,7 @@ Route::put('/settings/general', [SettingsController::class, 'updateGeneral'])->n
     Route::post('/users/{id}/suspend', [UserManagementController::class, 'suspend'])->name('users.suspend');
     Route::post('/users/{id}/ban', [UserManagementController::class, 'ban'])->name('users.ban');
     Route::post('/users/{id}/convert-role', [UserManagementController::class, 'convertRole'])->name('users.convert-role');
+    Route::post('/users/bulk-convert-role', [UserManagementController::class, 'bulkConvertRole'])->name('users.bulk-convert-role');
 
     // Ads Management
     // Route::resource('ads', AdsController::class);
