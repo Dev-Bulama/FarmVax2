@@ -463,4 +463,84 @@ class UserManagementController extends Controller
             'remember_token' => Str::random(60),
         ]);
     }
+
+    /**
+     * Bulk convert user roles
+     */
+    public function bulkConvertRole(Request $request)
+    {
+        $validated = $request->validate([
+            'new_role' => 'required|in:farmer,animal_health_professional,volunteer',
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+        ]);
+
+        $newRole = $validated['new_role'];
+        $userIds = $validated['user_ids'];
+
+        // Get users to convert
+        $users = User::whereIn('id', $userIds)->get();
+
+        // Filter out admin users and users with same role
+        $usersToConvert = $users->filter(function($user) use ($newRole) {
+            return $user->role !== 'admin' && $user->role !== $newRole;
+        });
+
+        if ($usersToConvert->isEmpty()) {
+            return back()->with('error', 'No users to convert. Selected users are either admins or already have the target role.');
+        }
+
+        $successCount = 0;
+        $errorCount = 0;
+        $errors = [];
+
+        foreach ($usersToConvert as $user) {
+            DB::beginTransaction();
+            try {
+                $oldRole = $user->role;
+
+                // Step 1: Cleanup old role data
+                $this->cleanupOldRoleData($user, $oldRole);
+
+                // Step 2: Update user role
+                $user->update(['role' => $newRole]);
+
+                // Step 3: Create new role data
+                $this->createNewRoleData($user, $newRole);
+
+                // Step 4: Log the conversion
+                $this->logRoleConversion($user, $oldRole, $newRole);
+
+                // Step 5: Invalidate user sessions
+                $this->invalidateUserSessions($user);
+
+                DB::commit();
+                $successCount++;
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $errorCount++;
+                $errors[] = "Failed to convert {$user->name}: " . $e->getMessage();
+                Log::error("Bulk role conversion error for user {$user->id}: " . $e->getMessage());
+            }
+        }
+
+        // Build response message
+        $message = "Bulk conversion completed. ";
+        if ($successCount > 0) {
+            $message .= "{$successCount} user(s) converted successfully. ";
+        }
+        if ($errorCount > 0) {
+            $message .= "{$errorCount} user(s) failed. ";
+        }
+
+        // Return with appropriate status
+        if ($errorCount > 0 && $successCount === 0) {
+            return back()->with('error', $message . implode(', ', array_slice($errors, 0, 3)));
+        } elseif ($errorCount > 0) {
+            return back()->with('warning', $message);
+        } else {
+            return back()->with('success', $message);
+        }
+    }
 }
