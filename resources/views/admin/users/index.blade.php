@@ -138,7 +138,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center justify-center space-x-2">
                                 <!-- Edit -->
-                                <a href="{{ route('admin.users.edit', $user->id) }}" 
+                                <a href="{{ route('admin.users.edit', $user->id) }}"
                                    class="text-blue-600 hover:text-blue-900 transition" title="Edit">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -146,6 +146,57 @@
                                 </a>
 
                                 @if($user->role !== 'admin')
+                                    <!-- Convert Role -->
+                                    <div class="relative inline-block text-left" x-data="{ open: false }">
+                                        <button @click="open = !open" type="button"
+                                                class="text-indigo-600 hover:text-indigo-900 transition" title="Convert Role">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                            </svg>
+                                        </button>
+
+                                        <div x-show="open" @click.away="open = false"
+                                             class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                                             style="display: none;">
+                                            <div class="py-1" role="menu">
+                                                <div class="px-4 py-2 text-xs text-gray-500 border-b">Convert to:</div>
+
+                                                @if($user->role !== 'farmer')
+                                                <form action="{{ route('admin.users.convert-role', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="new_role" value="farmer">
+                                                    <button type="submit" onclick="return confirm('Convert this user to Farmer? They will be logged out immediately.')"
+                                                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                        Farmer
+                                                    </button>
+                                                </form>
+                                                @endif
+
+                                                @if($user->role !== 'animal_health_professional')
+                                                <form action="{{ route('admin.users.convert-role', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="new_role" value="animal_health_professional">
+                                                    <button type="submit" onclick="return confirm('Convert this user to Professional? They will be logged out immediately.')"
+                                                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                        Professional
+                                                    </button>
+                                                </form>
+                                                @endif
+
+                                                @if($user->role !== 'volunteer')
+                                                <form action="{{ route('admin.users.convert-role', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="new_role" value="volunteer">
+                                                    <button type="submit" onclick="return confirm('Convert this user to Volunteer? They will be logged out immediately.')"
+                                                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                        Volunteer
+                                                    </button>
+                                                </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Activate/Suspend -->
                                     @if($user->account_status == 'active')
                                         <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST" class="inline">

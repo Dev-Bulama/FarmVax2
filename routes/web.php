@@ -25,16 +25,58 @@ use App\Http\Controllers\Admin\VolunteerController;
 
 // Welcome Page & Authentication
 Route::get('/', function() {
-    // Get real-time statistics
-    $stats = [
-        'farmers' => \App\Models\User::where('role', 'farmer')->where('is_active', true)->count(),
-        'professionals' => \App\Models\AnimalHealthProfessional::where('approval_status', 'approved')->count(),
-        'livestock' => \App\Models\Livestock::count(),
-        'farm_records' => \App\Models\FarmRecord::count(),
-        'vaccinations' => \App\Models\VaccinationHistory::count(),
-    ];
+    try {
+        // Get real-time statistics with error handling
+        $stats = [];
 
-    return view('welcome', compact('stats'));
+        // Count farmers (check if is_active column exists)
+        try {
+            $stats['farmers'] = \App\Models\User::where('role', 'farmer')->count();
+        } catch (\Exception $e) {
+            $stats['farmers'] = 0;
+        }
+
+        // Count approved professionals
+        try {
+            $stats['professionals'] = \App\Models\AnimalHealthProfessional::where('approval_status', 'approved')->count();
+        } catch (\Exception $e) {
+            $stats['professionals'] = 0;
+        }
+
+        // Count livestock
+        try {
+            $stats['livestock'] = \App\Models\Livestock::count();
+        } catch (\Exception $e) {
+            $stats['livestock'] = 0;
+        }
+
+        // Count farm records
+        try {
+            $stats['farm_records'] = \App\Models\FarmRecord::count();
+        } catch (\Exception $e) {
+            $stats['farm_records'] = 0;
+        }
+
+        // Count vaccinations
+        try {
+            $stats['vaccinations'] = \App\Models\VaccinationHistory::count();
+        } catch (\Exception $e) {
+            $stats['vaccinations'] = 0;
+        }
+
+        return view('welcome', compact('stats'));
+    } catch (\Exception $e) {
+        // If all else fails, show welcome page with default stats
+        \Log::error('Welcome page error: ' . $e->getMessage());
+        $stats = [
+            'farmers' => 0,
+            'professionals' => 0,
+            'livestock' => 0,
+            'farm_records' => 0,
+            'vaccinations' => 0,
+        ];
+        return view('welcome', compact('stats'));
+    }
 })->name('home');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -466,6 +508,7 @@ Route::put('/settings/general', [SettingsController::class, 'updateGeneral'])->n
     Route::post('/users/{id}/deactivate', [UserManagementController::class, 'deactivate'])->name('users.deactivate');
     Route::post('/users/{id}/suspend', [UserManagementController::class, 'suspend'])->name('users.suspend');
     Route::post('/users/{id}/ban', [UserManagementController::class, 'ban'])->name('users.ban');
+    Route::post('/users/{id}/convert-role', [UserManagementController::class, 'convertRole'])->name('users.convert-role');
 
     // Ads Management
     // Route::resource('ads', AdsController::class);

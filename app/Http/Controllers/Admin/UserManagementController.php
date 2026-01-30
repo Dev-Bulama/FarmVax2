@@ -9,6 +9,9 @@ use App\Models\AnimalHealthProfessional;
 use App\Models\Volunteer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class UserManagementController extends Controller
 {
@@ -283,5 +286,181 @@ class UserManagementController extends Controller
         }
 
         return back()->with('success', 'Bulk action completed successfully');
+    }
+
+    /**
+     * Convert user role dynamically
+     */
+    public function convertRole(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Prevent converting admin users
+        if ($user->role === 'admin') {
+            return back()->with('error', 'Cannot convert admin users to other roles!');
+        }
+
+        $validated = $request->validate([
+            'new_role' => 'required|in:farmer,animal_health_professional,volunteer',
+        ]);
+
+        $newRole = $validated['new_role'];
+        $oldRole = $user->role;
+
+        // If same role, no conversion needed
+        if ($oldRole === $newRole) {
+            return back()->with('info', 'User already has this role');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Step 1: Handle OLD role cleanup
+            $this->cleanupOldRoleData($user, $oldRole);
+
+            // Step 2: Update user role
+            $user->update(['role' => $newRole]);
+
+            // Step 3: Create NEW role data
+            $this->createNewRoleData($user, $newRole);
+
+            // Step 4: Log the conversion
+            $this->logRoleConversion($user, $oldRole, $newRole);
+
+            // Step 5: Clear user sessions (force re-login to new dashboard)
+            $this->invalidateUserSessions($user);
+
+            DB::commit();
+
+            return back()->with('success',
+                "User role converted from " . ucfirst(str_replace('_', ' ', $oldRole)) .
+                " to " . ucfirst(str_replace('_', ' ', $newRole)) . " successfully!");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Role conversion error: ' . $e->getMessage());
+            return back()->with('error', 'Error converting user role: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cleanup old role-specific data
+     */
+    protected function cleanupOldRoleData($user, $oldRole)
+    {
+        switch ($oldRole) {
+            case 'volunteer':
+                // Deactivate volunteer profile instead of deleting (preserve history)
+                if ($user->volunteer) {
+                    $user->volunteer->update([
+                        'is_active' => false,
+                        'status' => 'inactive',
+                    ]);
+                }
+                break;
+
+            case 'animal_health_professional':
+                // Deactivate professional profile (preserve history)
+                if ($user->animalHealthProfessional) {
+                    $user->animalHealthProfessional->update([
+                        'approval_status' => 'inactive',
+                    ]);
+                }
+                break;
+
+            case 'farmer':
+                // Farmers don't have separate profile table
+                // Keep all farm data intact for potential future conversion back
+                break;
+        }
+    }
+
+    /**
+     * Create new role-specific data
+     */
+    protected function createNewRoleData($user, $newRole)
+    {
+        switch ($newRole) {
+            case 'volunteer':
+                // Check if volunteer profile exists (from previous conversion)
+                if ($user->volunteer) {
+                    // Reactivate existing profile
+                    $user->volunteer->update([
+                        'is_active' => true,
+                        'status' => 'active',
+                        'approval_status' => 'approved',
+                    ]);
+                } else {
+                    // Create new volunteer profile
+                    Volunteer::create([
+                        'user_id' => $user->id,
+                        'status' => 'active',
+                        'approval_status' => 'approved',
+                        'is_active' => true,
+                        'points' => 0,
+                        'joined_at' => now(),
+                    ]);
+                }
+                break;
+
+            case 'animal_health_professional':
+                // Check if professional profile exists
+                if ($user->animalHealthProfessional) {
+                    // Reactivate existing profile
+                    $user->animalHealthProfessional->update([
+                        'approval_status' => 'approved',
+                        'approved_by' => auth()->id(),
+                        'approved_at' => now(),
+                    ]);
+                } else {
+                    // Create new professional profile
+                    AnimalHealthProfessional::create([
+                        'user_id' => $user->id,
+                        'approval_status' => 'approved',
+                        'approved_by' => auth()->id(),
+                        'approved_at' => now(),
+                        'submitted_at' => now(),
+                    ]);
+                }
+                break;
+
+            case 'farmer':
+                // Farmers don't have separate profile table
+                // All user data remains intact
+                break;
+        }
+    }
+
+    /**
+     * Log role conversion for audit trail
+     */
+    protected function logRoleConversion($user, $oldRole, $newRole)
+    {
+        try {
+            // Only log if table exists
+            if (Schema::hasTable('role_conversion_logs')) {
+                DB::table('role_conversion_logs')->insert([
+                    'user_id' => $user->id,
+                    'old_role' => $oldRole,
+                    'new_role' => $newRole,
+                    'converted_by' => auth()->id(),
+                    'converted_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Silent fail - don't break conversion if logging fails
+            Log::warning('Failed to log role conversion: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Invalidate user sessions to force re-login
+     */
+    protected function invalidateUserSessions($user)
+    {
+        // Update remember_token to invalidate sessions
+        $user->update([
+            'remember_token' => Str::random(60),
+        ]);
     }
 }

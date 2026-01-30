@@ -210,7 +210,51 @@
     providerSelect.dispatchEvent(new Event('change'));
 
     function testEmailConnection() {
-        alert('Email connection test will be implemented. This will send a test email to verify the configuration.');
+        const email = prompt('Enter email address to receive test email:');
+
+        if (!email) {
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('❌ Please enter a valid email address');
+            return;
+        }
+
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin h-5 w-5 inline mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending...';
+
+        fetch('{{ route("admin.settings.email.test") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                test_email: email
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            if (data.success) {
+                alert('✅ Success!\n\n' + data.message);
+            } else {
+                alert('❌ Error!\n\n' + data.message);
+            }
+        })
+        .catch(error => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            alert('❌ Error!\n\nFailed to send test email. Please check your configuration and try again.\n\nError: ' + error.message);
+        });
     }
 </script>
 
