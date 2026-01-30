@@ -295,13 +295,22 @@
                 Statistics
             </a>
             <!-- Import/Export -->
-<a href="{{ route('admin.import-export.index') }}" 
+<a href="{{ route('admin.import-export.index') }}"
    class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 transition {{ request()->routeIs('admin.import-export.*') ? 'bg-gray-100 border-r-4 border-blue-600' : '' }}">
     <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
     </svg>
     <span class="font-medium">Import/Export</span>
 </a>
+
+            <!-- System Updates -->
+            <a href="{{ route('admin.system-updates.index') }}"
+               class="flex items-center px-3 py-2 text-sm font-medium text-white rounded-md transition {{ request()->routeIs('admin.system-updates.*') ? 'bg-[#2FCB6E]/20 border-l-4 border-[#2FCB6E]' : 'hover:bg-white/10' }}">
+                <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                System Updates
+            </a>
 
         </nav>
 
