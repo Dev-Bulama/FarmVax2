@@ -20,7 +20,8 @@ class SmsService
         // Load provider-specific configuration
         $this->config = match($this->provider) {
             'kudi' => [
-                'api_key' => Setting::get('kudi_api_key'),
+                'username' => Setting::get('kudi_username'),
+                'password' => Setting::get('kudi_password'),
                 'sender_id' => Setting::get('kudi_sender_id'),
             ],
             'termii' => [
@@ -91,48 +92,68 @@ class SmsService
     protected function sendViaKudi(string $to, string $message): array
     {
         try {
-            $apiKey = $this->config['api_key'] ?? null;
+            $username = $this->config['username'] ?? null;
+            $password = $this->config['password'] ?? null;
             $senderId = $this->config['sender_id'] ?? null;
 
-            if (!$apiKey || !$senderId) {
+            if (!$username || !$password || !$senderId) {
                 return [
                     'success' => false,
-                    'error' => 'Kudi SMS API key or sender ID not configured'
+                    'error' => 'Kudi SMS username, password, or sender ID not configured'
                 ];
             }
 
-            // Kudi SMS API implementation with API Key authentication
-            $url = 'https://account.kudisms.net/api/';
+            // Format phone number (ensure it starts with country code)
+            $formattedPhone = $to;
+            if (substr($to, 0, 1) === '0') {
+                $formattedPhone = '234' . substr($to, 1); // Convert 0803... to 234803...
+            } elseif (substr($to, 0, 1) !== '+' && substr($to, 0, 3) !== '234') {
+                $formattedPhone = '234' . $to; // Add country code if missing
+            }
+            $formattedPhone = str_replace('+', '', $formattedPhone); // Remove + if present
 
-            $data = [
-                'api_key' => $apiKey,
+            // Kudi SMS API - Based on documentation
+            // Format: https://account.kudisms.net/api/?username=X&password=Y&sender=Z&mobiles=N&message=M
+
+            // Build URL with GET parameters (Kudi SMS uses GET method)
+            $params = [
+                'username' => $username,
+                'password' => $password,
                 'sender' => $senderId,
-                'mobiles' => $to,
+                'mobiles' => $formattedPhone,
                 'message' => $message
             ];
 
+            $url = 'https://account.kudisms.net/api/?' . http_build_query($params);
+
             $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/x-www-form-urlencoded',
-                'Accept: application/json'
-            ]);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Handle SSL issues
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
             curl_close($ch);
 
-            \Log::info('Kudi SMS Request', ['to' => $to, 'sender' => $senderId, 'api_key_length' => strlen($apiKey)]);
-            \Log::info('Kudi SMS Response', ['response' => $response, 'code' => $httpCode, 'curl_error' => $curlError]);
+            \Log::info('Kudi SMS Request', [
+                'to' => $formattedPhone,
+                'sender' => $senderId,
+                'username' => $username,
+                'password_length' => strlen($password),
+                'url' => preg_replace('/password=[^&]+/', 'password=***', $url) // Hide password in logs
+            ]);
+            \Log::info('Kudi SMS Response', [
+                'response' => $response,
+                'code' => $httpCode,
+                'curl_error' => $curlError
+            ]);
 
             if ($curlError) {
                 return [
                     'success' => false,
-                    'error' => 'cURL Error: ' . $curlError
+                    'error' => 'Connection Error: ' . $curlError
                 ];
             }
 
@@ -142,7 +163,9 @@ class SmsService
 
                 // Check for success in JSON response
                 if (is_array($responseData)) {
-                    if (isset($responseData['status']) && ($responseData['status'] === 'success' || $responseData['status'] === 'OK')) {
+                    if (isset($responseData['status']) &&
+                        (strtolower($responseData['status']) === 'success' ||
+                         strtolower($responseData['status']) === 'ok')) {
                         return [
                             'success' => true,
                             'message_id' => $responseData['message_id'] ?? 'kudi_' . uniqid(),
@@ -150,17 +173,42 @@ class SmsService
                             'response' => $response
                         ];
                     }
+
+                    // Check for error codes (100 = invalid token, 101 = deactivated, 300 = missing params)
+                    if (isset($responseData['code']) && in_array($responseData['code'], [100, 101, 300])) {
+                        $errorMsg = match($responseData['code']) {
+                            100 => 'Invalid API credentials. Please check your API key in Settings → SMS',
+                            101 => 'Your Kudi SMS account has been deactivated. Please contact Kudi SMS support',
+                            300 => 'Missing required parameters. Please ensure Sender ID is set',
+                            default => $responseData['message'] ?? 'Unknown error'
+                        };
+                        return [
+                            'success' => false,
+                            'error' => $errorMsg
+                        ];
+                    }
                 }
 
-                // Check for success in plain text response
-                if (stripos($response, 'OK') !== false ||
+                // Check for success in plain text response (like "OK: 12345" or "1701 Message Sent Successfully")
+                if (preg_match('/OK[:\s]/i', $response) ||
                     stripos($response, 'success') !== false ||
-                    stripos($response, 'sent') !== false) {
+                    stripos($response, 'sent') !== false ||
+                    preg_match('/\d{4}\s+Message\s+Sent/i', $response)) {
                     return [
                         'success' => true,
                         'message_id' => 'kudi_' . uniqid(),
                         'provider' => 'kudi',
                         'response' => $response
+                    ];
+                }
+
+                // Check for common error patterns
+                if (stripos($response, 'login') !== false ||
+                    stripos($response, 'authentication') !== false ||
+                    stripos($response, 'invalid') !== false) {
+                    return [
+                        'success' => false,
+                        'error' => 'Authentication failed. Please verify your Kudi SMS API credentials in Settings → SMS. Response: ' . $response
                     ];
                 }
             }

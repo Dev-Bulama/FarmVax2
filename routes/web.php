@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\ChatbotController;
 use App\Http\Controllers\Admin\AdsController;
 use App\Http\Controllers\Admin\OutbreakAlertController;
 use App\Http\Controllers\Admin\BulkMessageController;
@@ -521,6 +522,19 @@ Route::get('/settings/ai-training', [SettingsController::class, 'aiTraining'])->
 Route::post('/settings/ai-training', [SettingsController::class, 'storeAiTraining'])->name('settings.ai-training.store');
 Route::post('/settings/ai-training/{id}/toggle', [SettingsController::class, 'toggleAiTraining'])->name('settings.ai-training.toggle');
 Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroyAiTraining'])->name('settings.ai-training.destroy');
+
+    // Chatbot Management
+    Route::prefix('chatbot')->name('chatbot.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\ChatbotController::class, 'index'])->name('index');
+        Route::get('/{id}', [App\Http\Controllers\Admin\ChatbotController::class, 'show'])->name('show');
+        Route::post('/{id}/takeover', [App\Http\Controllers\Admin\ChatbotController::class, 'takeover'])->name('takeover');
+        Route::post('/{id}/release', [App\Http\Controllers\Admin\ChatbotController::class, 'release'])->name('release');
+        Route::post('/{id}/send', [App\Http\Controllers\Admin\ChatbotController::class, 'sendMessage'])->name('send');
+        Route::get('/{id}/messages', [App\Http\Controllers\Admin\ChatbotController::class, 'getMessages'])->name('messages');
+        Route::get('/requests/human', [App\Http\Controllers\Admin\ChatbotController::class, 'getHumanRequests'])->name('human-requests');
+        Route::post('/{id}/close', [App\Http\Controllers\Admin\ChatbotController::class, 'close'])->name('close');
+    });
+
     // Site Builder
     Route::get('/site-builder', function() {
         return view('admin.site-builder.index');
