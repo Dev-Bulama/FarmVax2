@@ -629,6 +629,12 @@ Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroy
         Route::delete('/{id}', [App\Http\Controllers\Admin\SystemUpdateController::class, 'destroy'])->name('destroy');
     });
 
+    // System Health & Diagnostics
+    Route::prefix('health-check')->name('health-check.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\HealthCheckController::class, 'index'])->name('index');
+        Route::post('/diagnostic', [App\Http\Controllers\Admin\HealthCheckController::class, 'runDiagnostic'])->name('diagnostic');
+    });
+
 // Import/Export/Backup Routes
     Route::get('/import-export', [App\Http\Controllers\Admin\ImportExportController::class, 'index'])->name('import-export.index');
     
