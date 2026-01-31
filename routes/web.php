@@ -284,41 +284,8 @@ Route::middleware(['auth'])->prefix('farmer')->name('farmer.')->group(function (
     // Profile
     Route::get('/profile', [\App\Http\Controllers\Farmer\ProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [\App\Http\Controllers\Farmer\ProfileController::class, 'update'])->name('profile.update');
-    
+
 });
-    // Livestock
-    Route::get('/livestock', [App\Http\Controllers\Farmer\LivestockController::class, 'index'])->name('livestock.index');
-    Route::get('/livestock/create', [App\Http\Controllers\Farmer\LivestockController::class, 'create'])->name('livestock.create');
-    Route::post('/livestock', [App\Http\Controllers\Farmer\LivestockController::class, 'store'])->name('livestock.store');
-    
-    // Service Requests
-    // Route::get('/service-requests', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'index'])->name('service-requests.index');
-    // Route::get('/service-requests/create', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'create'])->name('service-requests.create');
-    // Route::post('/service-requests', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'store'])->name('service-requests.store');
-    Route::get('/service-requests', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'index'])->name('service-requests.index');
-    Route::get('/service-requests/create', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'create'])->name('service-requests.create');
-    Route::post('/service-requests', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'store'])->name('service-requests.store');
-    Route::get('/service-requests/{id}', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'show'])->name('service-requests.show');
-    Route::post('/service-requests/{id}/cancel', [App\Http\Controllers\Farmer\ServiceRequestController::class, 'cancel'])->name('service-requests.cancel');
-    // Vaccinations
-    Route::get('/vaccinations', [App\Http\Controllers\Farmer\VaccinationController::class, 'index'])->name('vaccinations.index');
-    
-   // Farm Records - 3-Step Simplified System
-    Route::get('/farm-records/step1', [App\Http\Controllers\Farmer\FarmRecordController::class, 'step1'])->name('farm-records.step1');
-    Route::post('/farm-records/step1', [App\Http\Controllers\Farmer\FarmRecordController::class, 'storeStep1'])->name('farm-records.step1.store');
-    Route::get('/farm-records/step2', [App\Http\Controllers\Farmer\FarmRecordController::class, 'step2'])->name('farm-records.step2');
-    Route::post('/farm-records/step2', [App\Http\Controllers\Farmer\FarmRecordController::class, 'storeStep2'])->name('farm-records.step2.store');
-    Route::get('/farm-records/step3', [App\Http\Controllers\Farmer\FarmRecordController::class, 'step3'])->name('farm-records.step3');
-    Route::post('/farm-records/step3', [App\Http\Controllers\Farmer\FarmRecordController::class, 'storeStep3'])->name('farm-records.step3.store');
-    Route::get('/farm-records', [App\Http\Controllers\Farmer\FarmRecordController::class, 'index'])->name('farm-records.index');
-    Route::get('/farm-records/{id}', [App\Http\Controllers\Farmer\FarmRecordController::class, 'show'])->name('farm-records.show');
-    
-    // Profile
-    Route::get('/profile', [App\Http\Controllers\Farmer\ProfileController::class, 'index'])->name('profile');
-
-
-
-});  // ← Keep this closing bracket
 
 /*
 |--------------------------------------------------------------------------
