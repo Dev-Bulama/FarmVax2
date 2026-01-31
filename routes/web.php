@@ -205,6 +205,47 @@ Route::get('/api/lgas/{state}', function ($state) {
         ->get(['id', 'name']);
     return response()->json($lgas);
 });
+
+// Storage link creation route (for hPanel users without SSH)
+Route::get('/create-storage-link-temp', function() {
+    $target = storage_path('app/public');
+    $link = public_path('storage');
+
+    if (file_exists($link)) {
+        if (is_link($link)) {
+            $currentTarget = readlink($link);
+            return response()->json([
+                'success' => true,
+                'message' => 'Storage link already exists',
+                'from' => $link,
+                'to' => $currentTarget,
+                'note' => 'You can delete this route from routes/web.php now'
+            ]);
+        }
+        return response()->json([
+            'success' => false,
+            'error' => 'Path exists but is not a symlink. Please delete ' . $link . ' via File Manager first'
+        ], 400);
+    }
+
+    if (@symlink($target, $link)) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Storage link created successfully!',
+            'from' => $link,
+            'to' => $target,
+            'note' => 'Documents should now be accessible. Delete this route from routes/web.php for security.'
+        ]);
+    }
+
+    return response()->json([
+        'success' => false,
+        'error' => 'Failed to create symlink. Use storage-fix.php diagnostic tool or contact Hostinger support.',
+        'target' => $target,
+        'link' => $link
+    ], 500);
+});
+
 // Get countries
 Route::get('/api/countries', [App\Http\Controllers\API\LocationController::class, 'getCountries']);
 

@@ -129,8 +129,7 @@ public function updateSms(Request $request)
     $validated = $request->validate([
         'sms_provider' => 'required|in:kudi,termii,africastalking,bulksms,twilio',
         // Kudi SMS
-        'kudi_username' => 'nullable|string',
-        'kudi_password' => 'nullable|string',
+        'kudi_api_key' => 'nullable|string',
         'kudi_sender_id' => 'nullable|string|max:11',
         // Termii
         'termii_api_key' => 'nullable|string',
@@ -195,11 +194,19 @@ public function updateAi(Request $request)
         'ai_temperature' => 'required|numeric|min:0|max:2',
         'ai_max_tokens' => 'required|integer|min:1|max:4000',
         'ai_system_prompt' => 'nullable|string',
+        // Chatbot Customization
+        'chatbot_primary_color' => 'nullable|string|max:7',
+        'chatbot_secondary_color' => 'nullable|string|max:7',
+        'chatbot_size' => 'nullable|in:small,medium,large',
+        'chatbot_position' => 'nullable|in:bottom-right,bottom-left',
+        'chatbot_welcome_message' => 'nullable|string',
+        'chatbot_sound_enabled' => 'nullable|boolean',
+        'chatbot_show_badge' => 'nullable|boolean',
     ]);
 
     foreach ($validated as $key => $value) {
         if ($value !== null) {
-            $type = ($key == 'ai_enabled') ? 'boolean' : 'string';
+            $type = in_array($key, ['ai_enabled', 'chatbot_sound_enabled', 'chatbot_show_badge']) ? 'boolean' : 'string';
             Setting::set($key, $value, $type, 'ai');
         }
     }
