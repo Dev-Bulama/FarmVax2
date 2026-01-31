@@ -60,24 +60,15 @@
                 </div>
 
                 <h3 class="text-lg font-semibold text-gray-800">Kudi SMS Configuration</h3>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        API Username <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="kudi_username" value="{{ old('kudi_username', $settingsArray['kudi_username'] ?? '') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent"
-                           placeholder="Your Kudi SMS username">
-                </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        API Password <span class="text-red-500">*</span>
+                        API Key <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="kudi_password" value="{{ old('kudi_password', $settingsArray['kudi_password'] ?? '') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent"
-                           placeholder="••••••••">
-                    <p class="text-xs text-gray-500 mt-1">Leave empty to keep current password</p>
+                    <input type="text" name="kudi_api_key" value="{{ old('kudi_api_key', $settingsArray['kudi_api_key'] ?? '') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent font-mono text-sm"
+                           placeholder="B5Kk9*******Dy16XRTbA***********qPmzQj2rF70YefZN4nwaG">
+                    <p class="text-xs text-gray-500 mt-1">Your Kudi SMS API key from account dashboard</p>
                 </div>
 
                 <div>
@@ -87,7 +78,7 @@
                     <input type="text" name="kudi_sender_id" value="{{ old('kudi_sender_id', $settingsArray['kudi_sender_id'] ?? '') }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent"
                            placeholder="FarmVax" maxlength="11">
-                    <p class="text-xs text-gray-500 mt-1">Maximum 11 characters (alphanumeric)</p>
+                    <p class="text-xs text-gray-500 mt-1">Maximum 11 characters (alphanumeric) - must be registered with Kudi SMS</p>
                 </div>
             </div>
 

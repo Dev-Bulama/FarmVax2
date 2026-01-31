@@ -125,6 +125,137 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <h3 class="text-md font-semibold text-gray-700 mt-6 mb-2 border-t pt-4">Livestock Information <span class="text-gray-400 text-xs font-normal">(Optional)</span></h3>
+                    <p class="text-xs text-gray-600 mb-4">Map livestock columns to auto-create livestock for each farmer during import</p>
+
+                    <!-- Livestock Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Livestock Type <span class="text-gray-400 text-xs">(cattle, poultry, goat, sheep, pig, fish)</span>
+                        </label>
+                        <select name="mapping[livestock_type]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'livestock') !== false || stripos($header, 'animal') !== false || stripos($header, 'type') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Livestock Count -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Livestock Count <span class="text-gray-400 text-xs">(number of animals)</span>
+                        </label>
+                        <select name="mapping[livestock_count]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'count') !== false || stripos($header, 'quantity') !== false || stripos($header, 'number') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Livestock Breed -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Breed <span class="text-gray-400 text-xs">(Optional)</span>
+                        </label>
+                        <select name="mapping[livestock_breed]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'breed') !== false || stripos($header, 'variety') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Livestock Age Group -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Age Group <span class="text-gray-400 text-xs">(juvenile, adult, senior)</span>
+                        </label>
+                        <select name="mapping[livestock_age_group]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'age') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Livestock Health Status -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Health Status <span class="text-gray-400 text-xs">(healthy, sick, under_treatment, deceased)</span>
+                        </label>
+                        <select name="mapping[livestock_health_status]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'health') !== false || stripos($header, 'status') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Vaccination Status -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Vaccination Status <span class="text-gray-400 text-xs">(vaccinated, not_vaccinated, overdue)</span>
+                        </label>
+                        <select name="mapping[livestock_vaccination_status]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'vaccination') !== false || stripos($header, 'vaccinated') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Last Vaccination Date -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Last Vaccination Date <span class="text-gray-400 text-xs">(YYYY-MM-DD)</span>
+                        </label>
+                        <select name="mapping[last_vaccination_date]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'vaccination') !== false && stripos($header, 'date') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Livestock Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Notes/Remarks <span class="text-gray-400 text-xs">(Optional)</span>
+                        </label>
+                        <select name="mapping[livestock_notes]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                            <option value="">-- Select Column --</option>
+                            @foreach($headers as $index => $header)
+                                <option value="{{ $index }}"
+                                    {{ stripos($header, 'note') !== false || stripos($header, 'remark') !== false || stripos($header, 'comment') !== false ? 'selected' : '' }}>
+                                    {{ $header }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 @endif
             </div>
 
