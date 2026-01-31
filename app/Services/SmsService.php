@@ -106,11 +106,12 @@ class SmsService
             // Kudi SMS API implementation
             $url = 'https://account.kudisms.net/api/';
 
+            // Kudi SMS expects 'mobiles' parameter (not 'recipient')
             $data = [
                 'username' => $username,
                 'password' => $password,
                 'sender' => $senderId,
-                'recipient' => $to,
+                'mobiles' => $to,  // Changed from 'recipient' to 'mobiles'
                 'message' => $message
             ];
 
