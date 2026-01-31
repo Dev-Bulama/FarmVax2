@@ -129,7 +129,8 @@ public function updateSms(Request $request)
     $validated = $request->validate([
         'sms_provider' => 'required|in:kudi,termii,africastalking,bulksms,twilio',
         // Kudi SMS
-        'kudi_api_key' => 'nullable|string',
+        'kudi_username' => 'nullable|string',
+        'kudi_password' => 'nullable|string',
         'kudi_sender_id' => 'nullable|string|max:11',
         // Termii
         'termii_api_key' => 'nullable|string',

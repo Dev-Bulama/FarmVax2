@@ -61,14 +61,31 @@
 
                 <h3 class="text-lg font-semibold text-gray-800">Kudi SMS Configuration</h3>
 
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded mb-4">
+                    <p class="text-sm text-yellow-800">
+                        <strong>Note:</strong> Kudi SMS uses Username & Password authentication.
+                        Enter your Kudi SMS account username and password below (NOT API key).
+                    </p>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        API Key <span class="text-red-500">*</span>
+                        Username <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="kudi_api_key" value="{{ old('kudi_api_key', $settingsArray['kudi_api_key'] ?? '') }}"
+                    <input type="text" name="kudi_username" value="{{ old('kudi_username', $settingsArray['kudi_username'] ?? '') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent"
+                           placeholder="your-kudi-username">
+                    <p class="text-xs text-gray-500 mt-1">Your Kudi SMS account username</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Password <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" name="kudi_password" value="{{ old('kudi_password', $settingsArray['kudi_password'] ?? $settingsArray['kudi_api_key'] ?? '') }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent font-mono text-sm"
-                           placeholder="B5Kk9*******Dy16XRTbA***********qPmzQj2rF70YefZN4nwaG">
-                    <p class="text-xs text-gray-500 mt-1">Your Kudi SMS API key from account dashboard</p>
+                           placeholder="••••••••••••••••">
+                    <p class="text-xs text-gray-500 mt-1">Your Kudi SMS account password</p>
                 </div>
 
                 <div>
