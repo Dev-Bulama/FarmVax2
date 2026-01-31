@@ -20,8 +20,7 @@ class SmsService
         // Load provider-specific configuration
         $this->config = match($this->provider) {
             'kudi' => [
-                'username' => Setting::get('kudi_username'),
-                'password' => Setting::get('kudi_password'),
+                'api_key' => Setting::get('kudi_api_key'),
                 'sender_id' => Setting::get('kudi_sender_id'),
             ],
             'termii' => [
@@ -92,26 +91,23 @@ class SmsService
     protected function sendViaKudi(string $to, string $message): array
     {
         try {
-            $username = $this->config['username'] ?? null;
-            $password = $this->config['password'] ?? null;
+            $apiKey = $this->config['api_key'] ?? null;
             $senderId = $this->config['sender_id'] ?? null;
 
-            if (!$username || !$password || !$senderId) {
+            if (!$apiKey || !$senderId) {
                 return [
                     'success' => false,
-                    'error' => 'Kudi SMS credentials not configured'
+                    'error' => 'Kudi SMS API key or sender ID not configured'
                 ];
             }
 
-            // Kudi SMS API implementation
+            // Kudi SMS API implementation with API Key authentication
             $url = 'https://account.kudisms.net/api/';
 
-            // Kudi SMS expects 'mobiles' parameter (not 'recipient')
             $data = [
-                'username' => $username,
-                'password' => $password,
+                'api_key' => $apiKey,
                 'sender' => $senderId,
-                'mobiles' => $to,  // Changed from 'recipient' to 'mobiles'
+                'mobiles' => $to,
                 'message' => $message
             ];
 
@@ -127,13 +123,39 @@ class SmsService
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
 
-            \Log::info('Kudi SMS Response', ['response' => $response, 'code' => $httpCode]);
+            \Log::info('Kudi SMS Request', ['to' => $to, 'sender' => $senderId, 'api_key_length' => strlen($apiKey)]);
+            \Log::info('Kudi SMS Response', ['response' => $response, 'code' => $httpCode, 'curl_error' => $curlError]);
+
+            if ($curlError) {
+                return [
+                    'success' => false,
+                    'error' => 'cURL Error: ' . $curlError
+                ];
+            }
 
             if ($httpCode === 200) {
-                // Kudi returns 'OK' on success
-                if (stripos($response, 'OK') !== false || stripos($response, 'success') !== false) {
+                // Parse response - Kudi returns various success indicators
+                $responseData = json_decode($response, true);
+
+                // Check for success in JSON response
+                if (is_array($responseData)) {
+                    if (isset($responseData['status']) && ($responseData['status'] === 'success' || $responseData['status'] === 'OK')) {
+                        return [
+                            'success' => true,
+                            'message_id' => $responseData['message_id'] ?? 'kudi_' . uniqid(),
+                            'provider' => 'kudi',
+                            'response' => $response
+                        ];
+                    }
+                }
+
+                // Check for success in plain text response
+                if (stripos($response, 'OK') !== false ||
+                    stripos($response, 'success') !== false ||
+                    stripos($response, 'sent') !== false) {
                     return [
                         'success' => true,
                         'message_id' => 'kudi_' . uniqid(),
@@ -143,9 +165,19 @@ class SmsService
                 }
             }
 
+            // Extract error message from response
+            $errorMessage = $response;
+            $responseData = json_decode($response, true);
+            if (is_array($responseData) && isset($responseData['message'])) {
+                $errorMessage = $responseData['message'];
+            } elseif (is_array($responseData) && isset($responseData['error'])) {
+                $errorMessage = $responseData['error'];
+            }
+
             return [
                 'success' => false,
-                'error' => $response ?? 'Unknown error'
+                'error' => 'Kudi SMS: ' . $errorMessage,
+                'http_code' => $httpCode
             ];
         } catch (\Exception $e) {
             \Log::error('Kudi SMS Error: ' . $e->getMessage());
