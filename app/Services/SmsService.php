@@ -20,6 +20,7 @@ class SmsService
         // Load provider-specific configuration
         $this->config = match($this->provider) {
             'kudi' => [
+                'api_key' => Setting::get('kudi_api_key'),
                 'username' => Setting::get('kudi_username'),
                 'password' => Setting::get('kudi_password'),
                 'sender_id' => Setting::get('kudi_sender_id'),
@@ -92,14 +93,26 @@ class SmsService
     protected function sendViaKudi(string $to, string $message): array
     {
         try {
+            $apiKey = $this->config['api_key'] ?? null;
             $username = $this->config['username'] ?? null;
             $password = $this->config['password'] ?? null;
             $senderId = $this->config['sender_id'] ?? null;
 
-            if (!$username || !$password || !$senderId) {
+            // Check if we have either API key or username/password
+            $hasApiKey = !empty($apiKey);
+            $hasUsernamePassword = !empty($username) && !empty($password);
+
+            if (!$hasApiKey && !$hasUsernamePassword) {
                 return [
                     'success' => false,
-                    'error' => 'Kudi SMS username, password, or sender ID not configured'
+                    'error' => 'Kudi SMS authentication not configured. Please provide either API Key OR Username & Password in Settings → SMS'
+                ];
+            }
+
+            if (!$senderId) {
+                return [
+                    'success' => false,
+                    'error' => 'Kudi SMS Sender ID not configured'
                 ];
             }
 
@@ -112,17 +125,29 @@ class SmsService
             }
             $formattedPhone = str_replace('+', '', $formattedPhone); // Remove + if present
 
-            // Kudi SMS API - Based on documentation
-            // Format: https://account.kudisms.net/api/?username=X&password=Y&sender=Z&mobiles=N&message=M
+            // Kudi SMS API - Supports both authentication methods
+            // Format with username/password: https://account.kudisms.net/api/?username=X&password=Y&sender=Z&mobiles=N&message=M
+            // Format with API key: https://account.kudisms.net/api/?api_key=X&sender=Z&mobiles=N&message=M
 
             // Build URL with GET parameters (Kudi SMS uses GET method)
-            $params = [
-                'username' => $username,
-                'password' => $password,
-                'sender' => $senderId,
-                'mobiles' => $formattedPhone,
-                'message' => $message
-            ];
+            if ($hasApiKey) {
+                // Use API key authentication
+                $params = [
+                    'api_key' => $apiKey,
+                    'sender' => $senderId,
+                    'mobiles' => $formattedPhone,
+                    'message' => $message
+                ];
+            } else {
+                // Use username/password authentication
+                $params = [
+                    'username' => $username,
+                    'password' => $password,
+                    'sender' => $senderId,
+                    'mobiles' => $formattedPhone,
+                    'message' => $message
+                ];
+            }
 
             $url = 'https://account.kudisms.net/api/?' . http_build_query($params);
 
@@ -140,9 +165,11 @@ class SmsService
             \Log::info('Kudi SMS Request', [
                 'to' => $formattedPhone,
                 'sender' => $senderId,
+                'auth_method' => $hasApiKey ? 'api_key' : 'username/password',
                 'username' => $username,
-                'password_length' => strlen($password),
-                'url' => preg_replace('/password=[^&]+/', 'password=***', $url) // Hide password in logs
+                'api_key_length' => $hasApiKey ? strlen($apiKey) : 0,
+                'password_length' => $hasUsernamePassword ? strlen($password) : 0,
+                'url' => preg_replace(['/password=[^&]+/', '/api_key=[^&]+/'], ['password=***', 'api_key=***'], $url)
             ]);
             \Log::info('Kudi SMS Response', [
                 'response' => $response,

@@ -63,29 +63,54 @@
 
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded mb-4">
                     <p class="text-sm text-yellow-800">
-                        <strong>Note:</strong> Kudi SMS uses Username & Password authentication.
-                        Enter your Kudi SMS account username and password below (NOT API key).
+                        <strong>Note:</strong> Kudi SMS supports both API Key and Username/Password authentication.
+                        Fill in whichever method you have from your Kudi SMS account.
                     </p>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Username <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="kudi_username" value="{{ old('kudi_username', $settingsArray['kudi_username'] ?? '') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent"
-                           placeholder="your-kudi-username">
-                    <p class="text-xs text-gray-500 mt-1">Your Kudi SMS account username</p>
+                <!-- Authentication Method Toggle -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Authentication Method</label>
+                    <select id="kudi-auth-method" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent">
+                        <option value="username" {{ !empty($settingsArray['kudi_username']) ? 'selected' : '' }}>Username & Password</option>
+                        <option value="api_key" {{ !empty($settingsArray['kudi_api_key']) && empty($settingsArray['kudi_username']) ? 'selected' : '' }}>API Key</option>
+                    </select>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Password <span class="text-red-500">*</span>
-                    </label>
-                    <input type="password" name="kudi_password" value="{{ old('kudi_password', $settingsArray['kudi_password'] ?? $settingsArray['kudi_api_key'] ?? '') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent font-mono text-sm"
-                           placeholder="••••••••••••••••">
-                    <p class="text-xs text-gray-500 mt-1">Your Kudi SMS account password</p>
+                <!-- API Key Method -->
+                <div id="kudi-api-key-section" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            API Key <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="kudi_api_key" value="{{ old('kudi_api_key', $settingsArray['kudi_api_key'] ?? '') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent font-mono text-sm"
+                               placeholder="B5Kk9*******Dy16XRTbA***********qPmzQj2rF70YefZN4nwaG">
+                        <p class="text-xs text-gray-500 mt-1">Your Kudi SMS API key from account dashboard</p>
+                    </div>
+                </div>
+
+                <!-- Username/Password Method -->
+                <div id="kudi-username-section" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Username <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="kudi_username" value="{{ old('kudi_username', $settingsArray['kudi_username'] ?? '') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent"
+                               placeholder="your-kudi-username">
+                        <p class="text-xs text-gray-500 mt-1">Your Kudi SMS account username</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Password <span class="text-red-500">*</span>
+                        </label>
+                        <input type="password" name="kudi_password" value="{{ old('kudi_password', $settingsArray['kudi_password'] ?? '') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2FCB6E] focus:border-transparent font-mono text-sm"
+                               placeholder="••••••••••••••••">
+                        <p class="text-xs text-gray-500 mt-1">Your Kudi SMS account password</p>
+                    </div>
                 </div>
 
                 <div>
@@ -235,6 +260,26 @@
 
     // Trigger on page load
     providerSelect.dispatchEvent(new Event('change'));
+
+    // Kudi SMS auth method toggle
+    const kudiAuthMethod = document.getElementById('kudi-auth-method');
+    const kudiApiKeySection = document.getElementById('kudi-api-key-section');
+    const kudiUsernameSection = document.getElementById('kudi-username-section');
+
+    if (kudiAuthMethod) {
+        kudiAuthMethod.addEventListener('change', function() {
+            if (this.value === 'api_key') {
+                kudiApiKeySection.classList.remove('hidden');
+                kudiUsernameSection.classList.add('hidden');
+            } else {
+                kudiApiKeySection.classList.add('hidden');
+                kudiUsernameSection.classList.remove('hidden');
+            }
+        });
+
+        // Trigger on page load
+        kudiAuthMethod.dispatchEvent(new Event('change'));
+    }
 
     function testSmsConnection() {
         const phone = prompt('Enter phone number to receive test SMS (with country code, e.g., +2348012345678):');
