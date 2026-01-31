@@ -8,6 +8,8 @@ use App\Models\Setting;
 use App\Models\ChatbotTrainingData;
 use App\Models\ChatbotConversation;
 use App\Models\ChatbotMessage;
+use App\Models\User;
+use App\Services\EmailService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -49,8 +51,67 @@ class AiChatController extends Controller
                 ], 500);
             }
 
+            // Check if user is requesting human assistance
+            $humanRequested = $this->detectHumanRequest($validated['message']);
+
+            if ($humanRequested) {
+                // Mark conversation as requesting human
+                $conversation = $this->getOrCreateConversation();
+
+                if (!$conversation->human_requested && !$conversation->human_takeover) {
+                    $conversation->update([
+                        'human_requested' => true,
+                        'human_requested_at' => now(),
+                    ]);
+
+                    // Send notification to admin
+                    $this->notifyAdmin($conversation);
+
+                    // Save user message
+                    ChatbotMessage::create([
+                        'conversation_id' => $conversation->id,
+                        'user_id' => auth()->id(),
+                        'message' => $validated['message'],
+                        'sender_type' => 'user',
+                    ]);
+
+                    $response = "Thank you for your request! I've notified our team and a human agent will assist you shortly. Please wait for a moment while we connect you.";
+
+                    // Save bot response
+                    ChatbotMessage::create([
+                        'conversation_id' => $conversation->id,
+                        'message' => $response,
+                        'sender_type' => 'bot',
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'response' => $response,
+                        'human_requested' => true
+                    ]);
+                }
+            }
+
+            // Check if conversation is in human takeover mode
+            $conversation = $this->getOrCreateConversation();
+            if ($conversation->human_takeover) {
+                // Save user message and wait for admin response
+                ChatbotMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => auth()->id(),
+                    'message' => $validated['message'],
+                    'sender_type' => 'user',
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'response' => 'Your message has been sent to our human agent. They will respond shortly.',
+                    'human_takeover' => true
+                ]);
+            }
+
             $systemPrompt = Setting::get('ai_system_prompt', 'You are a helpful agricultural assistant for FarmVax.');
-            
+
             // Add training data context
             $trainingContext = $this->getTrainingContext($validated['message']);
             if ($trainingContext) {
@@ -174,18 +235,12 @@ class AiChatController extends Controller
     protected function saveConversation($userMessage, $aiResponse)
     {
         try {
-            $userId = auth()->id();
-            
-            // Create or get conversation
-            $conversation = ChatbotConversation::firstOrCreate([
-                'user_id' => $userId,
-                'status' => 'active',
-            ]);
+            $conversation = $this->getOrCreateConversation();
 
             // Save messages
             ChatbotMessage::create([
                 'conversation_id' => $conversation->id,
-                'user_id' => $userId,
+                'user_id' => auth()->id(),
                 'message' => $userMessage,
                 'sender_type' => 'user',
             ]);
@@ -197,6 +252,129 @@ class AiChatController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Error saving conversation: ' . $e->getMessage());
+        }
+    }
+
+    protected function getOrCreateConversation()
+    {
+        $userId = auth()->id();
+
+        return ChatbotConversation::firstOrCreate(
+            [
+                'user_id' => $userId,
+                'status' => 'active',
+            ],
+            [
+                'session_id' => session()->getId(),
+            ]
+        );
+    }
+
+    protected function detectHumanRequest($message)
+    {
+        $message = strtolower($message);
+
+        // Keywords that indicate user wants human assistance
+        $keywords = [
+            'human',
+            'real person',
+            'live agent',
+            'speak to someone',
+            'talk to someone',
+            'customer service',
+            'representative',
+            'operator',
+            'human agent',
+            'live chat',
+            'speak to a person',
+            'talk to a person',
+            'real human',
+            'actual person',
+            'not a bot',
+        ];
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($message, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function notifyAdmin($conversation)
+    {
+        try {
+            // Prevent duplicate notifications
+            if ($conversation->notification_sent) {
+                return;
+            }
+
+            $user = $conversation->user;
+            $userName = $user ? $user->name : 'Guest User';
+            $userEmail = $user ? $user->email : 'No email';
+
+            // Get all admin users
+            $admins = User::where('role', 'admin')->get();
+
+            if ($admins->isEmpty()) {
+                Log::warning('No admin users found to notify');
+                return;
+            }
+
+            // Send email to all admins
+            $emailService = new EmailService();
+            $adminEmail = Setting::get('contact_email', 'admin@farmvax.com');
+
+            $subject = "🔔 Human Assistance Requested - FarmVax Chatbot";
+            $body = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                    <div style='background: linear-gradient(to right, #11455B, #0d3345); padding: 20px; text-align: center;'>
+                        <h2 style='color: white; margin: 0;'>🔔 Human Assistance Requested</h2>
+                    </div>
+
+                    <div style='background: #f9f9f9; padding: 20px; border: 1px solid #ddd;'>
+                        <p style='font-size: 16px; color: #333;'>
+                            A user has requested human assistance in the chatbot.
+                        </p>
+
+                        <div style='background: white; padding: 15px; border-left: 4px solid #11455B; margin: 20px 0;'>
+                            <h3 style='margin-top: 0; color: #11455B;'>User Information</h3>
+                            <p><strong>Name:</strong> {$userName}</p>
+                            <p><strong>Email:</strong> {$userEmail}</p>
+                            <p><strong>Requested:</strong> " . now()->format('M d, Y H:i') . "</p>
+                        </div>
+
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='" . route('admin.chatbot.show', $conversation->id) . "'
+                               style='background: #11455B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;'>
+                                View Conversation & Take Over
+                            </a>
+                        </div>
+
+                        <p style='color: #666; font-size: 14px; margin-top: 20px;'>
+                            Please respond to the user as soon as possible to provide the best customer service experience.
+                        </p>
+                    </div>
+
+                    <div style='background: #11455B; padding: 15px; text-align: center;'>
+                        <p style='color: white; margin: 0; font-size: 12px;'>
+                            FarmVax - Livestock Vaccination & Farm Management Platform
+                        </p>
+                    </div>
+                </div>
+            ";
+
+            $result = $emailService->send($adminEmail, $subject, $body);
+
+            if ($result['success']) {
+                $conversation->update(['notification_sent' => true]);
+                Log::info('Admin notified of human request', ['conversation_id' => $conversation->id]);
+            } else {
+                Log::error('Failed to send admin notification email', ['error' => $result['error'] ?? 'Unknown']);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error notifying admin: ' . $e->getMessage());
         }
     }
 }
