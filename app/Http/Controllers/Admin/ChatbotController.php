@@ -17,7 +17,7 @@ class ChatbotController extends Controller
     public function index()
     {
         $activeConversations = ChatbotConversation::with(['user', 'messages', 'admin'])
-            ->where('status', 'active')
+            ->where('is_active', true)
             ->orderByRaw('human_requested DESC, human_takeover DESC, updated_at DESC')
             ->paginate(20);
 
@@ -164,7 +164,7 @@ class ChatbotController extends Controller
         $conversation = ChatbotConversation::findOrFail($id);
 
         $conversation->update([
-            'status' => 'closed',
+            'is_active' => false,
         ]);
 
         return response()->json([
