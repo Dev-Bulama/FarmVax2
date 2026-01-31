@@ -201,6 +201,107 @@
                 <p class="text-xs text-gray-500 mt-1">Define the AI's behavior, knowledge, and personality</p>
             </div>
 
+            <!-- Chatbot Appearance Customization -->
+            <div class="border-t pt-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🎨 Chatbot Appearance</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Primary Color -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="chatbot_primary_color_picker"
+                                   value="{{ old('chatbot_primary_color', $settingsArray['chatbot_primary_color'] ?? '#9333ea') }}"
+                                   class="h-10 w-20 border border-gray-300 rounded cursor-pointer">
+                            <input type="text" name="chatbot_primary_color" id="chatbot_primary_color_text"
+                                   value="{{ old('chatbot_primary_color', $settingsArray['chatbot_primary_color'] ?? '#9333ea') }}"
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                   placeholder="#9333ea" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Header and button color (default: Purple)</p>
+                    </div>
+
+                    <!-- Secondary Color -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Secondary Color</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="chatbot_secondary_color_picker"
+                                   value="{{ old('chatbot_secondary_color', $settingsArray['chatbot_secondary_color'] ?? '#6366f1') }}"
+                                   class="h-10 w-20 border border-gray-300 rounded cursor-pointer">
+                            <input type="text" name="chatbot_secondary_color" id="chatbot_secondary_color_text"
+                                   value="{{ old('chatbot_secondary_color', $settingsArray['chatbot_secondary_color'] ?? '#6366f1') }}"
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                   placeholder="#6366f1" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Accent color (default: Indigo)</p>
+                    </div>
+
+                    <!-- Chatbot Size -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Bubble Size</label>
+                        <select name="chatbot_size" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="small" {{ (old('chatbot_size', $settingsArray['chatbot_size'] ?? 'medium') == 'small') ? 'selected' : '' }}>Small (56px)</option>
+                            <option value="medium" {{ (old('chatbot_size', $settingsArray['chatbot_size'] ?? 'medium') == 'medium') ? 'selected' : '' }}>Medium (64px) - Default</option>
+                            <option value="large" {{ (old('chatbot_size', $settingsArray['chatbot_size'] ?? 'medium') == 'large') ? 'selected' : '' }}>Large (80px)</option>
+                        </select>
+                    </div>
+
+                    <!-- Position -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
+                        <select name="chatbot_position" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="bottom-right" {{ (old('chatbot_position', $settingsArray['chatbot_position'] ?? 'bottom-right') == 'bottom-right') ? 'selected' : '' }}>Bottom Right - Default</option>
+                            <option value="bottom-left" {{ (old('chatbot_position', $settingsArray['chatbot_position'] ?? 'bottom-right') == 'bottom-left') ? 'selected' : '' }}>Bottom Left</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Welcome Message -->
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Welcome Message</label>
+                    <textarea name="chatbot_welcome_message" rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              placeholder="Hello! 👋 I'm your FarmVax AI assistant...">{{ old('chatbot_welcome_message', $settingsArray['chatbot_welcome_message'] ?? 'Hello! 👋 I\'m your FarmVax AI assistant. I can help you with livestock vaccination, disease prevention, and farm management. How can I help you today?') }}</textarea>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="border-t pt-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🔔 Notifications</h3>
+
+                <div class="space-y-3">
+                    <!-- Enable Notifications -->
+                    <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Enable Sound Notifications</h4>
+                            <p class="text-sm text-gray-600 mt-1">Play sound when users send messages</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="hidden" name="chatbot_sound_enabled" value="0">
+                            <input type="checkbox" name="chatbot_sound_enabled" value="1"
+                                   {{ (old('chatbot_sound_enabled', $settingsArray['chatbot_sound_enabled'] ?? '1') == '1') ? 'checked' : '' }}
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                        </label>
+                    </div>
+
+                    <!-- Show Notification Badge -->
+                    <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Show Red Notification Badge</h4>
+                            <p class="text-sm text-gray-600 mt-1">Display red dot on chat bubble when new messages arrive</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="hidden" name="chatbot_show_badge" value="0">
+                            <input type="checkbox" name="chatbot_show_badge" value="1"
+                                   {{ (old('chatbot_show_badge', $settingsArray['chatbot_show_badge'] ?? '1') == '1') ? 'checked' : '' }}
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Action Buttons -->
@@ -247,6 +348,32 @@
 
     // Trigger on page load
     providerSelect.dispatchEvent(new Event('change'));
+
+    // Sync color pickers with text inputs
+    const primaryColorPicker = document.getElementById('chatbot_primary_color_picker');
+    const primaryColorText = document.getElementById('chatbot_primary_color_text');
+    const secondaryColorPicker = document.getElementById('chatbot_secondary_color_picker');
+    const secondaryColorText = document.getElementById('chatbot_secondary_color_text');
+
+    // Sync primary color
+    primaryColorPicker.addEventListener('input', function() {
+        primaryColorText.value = this.value;
+    });
+    primaryColorText.addEventListener('input', function() {
+        if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+            primaryColorPicker.value = this.value;
+        }
+    });
+
+    // Sync secondary color
+    secondaryColorPicker.addEventListener('input', function() {
+        secondaryColorText.value = this.value;
+    });
+    secondaryColorText.addEventListener('input', function() {
+        if (/^#[0-9A-Fa-f]{6}$/.test(this.value)) {
+            secondaryColorPicker.value = this.value;
+        }
+    });
 
     function testAi() {
         alert('AI test feature will send a test message to verify the configuration works correctly.');

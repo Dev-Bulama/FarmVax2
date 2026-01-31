@@ -1,16 +1,34 @@
 @php
     $aiEnabled = \App\Models\Setting::get('ai_enabled', false);
+    $chatbotPrimaryColor = \App\Models\Setting::get('chatbot_primary_color', '#9333ea');
+    $chatbotSecondaryColor = \App\Models\Setting::get('chatbot_secondary_color', '#6366f1');
+    $chatbotSize = \App\Models\Setting::get('chatbot_size', 'medium');
+    $chatbotPosition = \App\Models\Setting::get('chatbot_position', 'bottom-right');
+    $chatbotWelcome = \App\Models\Setting::get('chatbot_welcome_message', "Hello! 👋 I'm your FarmVax AI assistant. I can help you with livestock vaccination, disease prevention, and farm management. How can I help you today?");
+    $chatbotSoundEnabled = \App\Models\Setting::get('chatbot_sound_enabled', '1') == '1';
+    $chatbotShowBadge = \App\Models\Setting::get('chatbot_show_badge', '1') == '1';
+
+    // Size mappings
+    $sizeMap = [
+        'small' => ['bubble' => 'w-14 h-14', 'icon' => 'h-7 w-7', 'badge' => 'w-3 h-3'],
+        'medium' => ['bubble' => 'w-14 h-14 md:w-16 md:h-16', 'icon' => 'h-7 w-7 md:h-8 md:w-8', 'badge' => 'w-3 h-3 md:w-4 md:h-4'],
+        'large' => ['bubble' => 'w-20 h-20', 'icon' => 'h-10 w-10', 'badge' => 'w-4 h-4']
+    ];
+    $sizes = $sizeMap[$chatbotSize] ?? $sizeMap['medium'];
+
+    // Position mapping
+    $positionClass = $chatbotPosition === 'bottom-left' ? 'bottom-4 left-4 md:bottom-6 md:left-6' : 'bottom-4 right-4 md:bottom-6 md:right-6';
 @endphp
 
 @if($aiEnabled)
 <!-- AI Chatbot Bubble -->
-<div id="chatbot-container" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 max-w-full">
+<div id="chatbot-container" class="fixed {{ $positionClass }} z-50 max-w-full" data-sound-enabled="{{ $chatbotSoundEnabled ? 'true' : 'false' }}" data-show-badge="{{ $chatbotShowBadge ? 'true' : 'false' }}">
 
     <!-- Chat Window -->
     <div id="chat-window" class="hidden mb-4 w-full max-w-[calc(100vw-2rem)] md:w-96 h-[calc(100vh-8rem)] md:h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
         
         <!-- Header -->
-        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-3 md:p-4 flex items-center justify-between">
+        <div class="p-3 md:p-4 flex items-center justify-between" style="background: linear-gradient(to right, {{ $chatbotPrimaryColor }}, {{ $chatbotSecondaryColor }});">
             <div class="flex items-center space-x-2 md:space-x-3">
                 <div class="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="h-5 w-5 md:h-6 md:w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +57,7 @@
                     </svg>
                 </div>
                 <div class="bg-white rounded-lg rounded-tl-none p-2.5 md:p-3 shadow-sm max-w-[85%] md:max-w-[80%] break-words">
-                    <p class="text-sm text-gray-800 leading-relaxed">Hello! 👋 I'm your FarmVax AI assistant. I can help you with livestock vaccination, disease prevention, and farm management. How can I help you today?</p>
+                    <p class="text-sm text-gray-800 leading-relaxed">{{ $chatbotWelcome }}</p>
                 </div>
             </div>
         </div>
@@ -62,11 +80,12 @@
 
     <!-- Floating Button -->
     <button id="chat-bubble" onclick="toggleChat()"
-            class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shadow-2xl hover:shadow-purple-500/50 hover:scale-110 transition-all duration-300 relative touch-manipulation">
-        <svg id="bubble-icon" class="h-7 w-7 md:h-8 md:w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="text-white rounded-full {{ $sizes['bubble'] }} flex items-center justify-center shadow-2xl hover:scale-110 transition-all duration-300 relative touch-manipulation"
+            style="background: linear-gradient(to right, {{ $chatbotPrimaryColor }}, {{ $chatbotSecondaryColor }});">
+        <svg id="bubble-icon" class="{{ $sizes['icon'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
         </svg>
-        <span id="notification-dot" class="hidden absolute top-0 right-0 w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full border-2 border-white"></span>
+        <span id="notification-dot" class="{{ $chatbotShowBadge ? '' : 'hidden' }} absolute top-0 right-0 {{ $sizes['badge'] }} bg-red-500 rounded-full border-2 border-white pulse-animation"></span>
     </button>
 </div>
 
