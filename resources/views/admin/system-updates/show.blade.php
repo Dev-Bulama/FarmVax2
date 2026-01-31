@@ -77,9 +77,22 @@
 
             <hr class="my-6">
 
+            <!-- Pre-Apply Checklist -->
+            @if($version->status === 'pending')
+                <div class="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p class="text-xs font-semibold text-yellow-800 mb-2">✓ Pre-Apply Checklist:</p>
+                    <ul class="text-xs text-yellow-700 space-y-1">
+                        <li>✓ Database backup created</li>
+                        <li>✓ Files backup created</li>
+                        <li>✓ Storage permissions verified</li>
+                        <li>✓ Low-traffic period scheduled</li>
+                    </ul>
+                </div>
+            @endif
+
             <!-- Actions -->
             @if($version->status === 'pending')
-                <form action="{{ route('admin.system-updates.apply', $version->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to apply this update? Make sure you have a backup!');">
+                <form action="{{ route('admin.system-updates.apply', $version->id) }}" method="POST" onsubmit="return confirm('⚠️ FINAL CONFIRMATION\n\nHave you:\n✓ Created a database backup?\n✓ Created a files backup?\n✓ Verified storage permissions?\n✓ Informed users about maintenance?\n\nClick OK to proceed with update.');">
                     @csrf
                     <button type="submit" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
                         ✓ Apply This Update
@@ -101,6 +114,36 @@
 
     <!-- Right Column - Details -->
     <div class="lg:col-span-2 space-y-6">
+
+        <!-- Instructions (for pending updates) -->
+        @if($version->status === 'pending')
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+                <div class="flex items-start">
+                    <svg class="h-6 w-6 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-bold mb-2">📋 Before Applying This Update</h3>
+                        <ol class="list-decimal list-inside space-y-2 text-sm">
+                            <li><strong>Create Database Backup:</strong> Export full database using phpMyAdmin or command: <code class="bg-blue-700 px-2 py-0.5 rounded">mysqldump -u user -p database > backup.sql</code></li>
+                            <li><strong>Create Files Backup:</strong> Download or copy entire application directory</li>
+                            <li><strong>Verify Storage Permissions:</strong> Ensure these directories are writable (755):
+                                <ul class="list-disc list-inside ml-4 mt-1">
+                                    <li><code class="bg-blue-700 px-2 py-0.5 rounded">storage/app/private/system-updates/</code></li>
+                                    <li><code class="bg-blue-700 px-2 py-0.5 rounded">app/, config/, public/, resources/, routes/</code></li>
+                                </ul>
+                            </li>
+                            <li><strong>Review Changelog:</strong> Read the changes below to understand what will be updated</li>
+                            <li><strong>Schedule Maintenance Window:</strong> Apply during low-traffic periods</li>
+                            <li><strong>Inform Users:</strong> Notify users about scheduled maintenance if applicable</li>
+                        </ol>
+                        <div class="mt-4 p-3 bg-blue-700 rounded">
+                            <p class="text-xs"><strong>💡 Tip:</strong> Once you click "Apply This Update," the system will automatically extract files, run migrations (if needed), and clear caches. The process typically takes 1-5 minutes depending on update size.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Description -->
         @if($version->description)

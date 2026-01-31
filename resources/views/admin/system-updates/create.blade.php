@@ -128,21 +128,93 @@
     </form>
 </div>
 
-<!-- Warning Box -->
-<div class="mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+<!-- Instructions Box -->
+<div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
     <div class="flex">
-        <svg class="h-5 w-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="h-5 w-5 text-blue-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div class="flex-1">
+            <h4 class="text-blue-800 font-semibold mb-2">📋 How to Prepare and Apply System Updates</h4>
+            <div class="text-sm text-blue-900 space-y-3">
+                <div>
+                    <p class="font-semibold mb-1">Step 1: Prepare the Update ZIP File</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2 text-blue-800">
+                        <li>Create a ZIP file containing ONLY the application files (app/, config/, database/, public/, resources/, routes/)</li>
+                        <li><strong>DO NOT include:</strong> .env file, storage/ directory, vendor/ directory, node_modules/, or .git/</li>
+                        <li>Maintain the exact directory structure (files should be in root of ZIP, not nested in a folder)</li>
+                        <li>Example correct structure: update.zip → app/, config/, public/, resources/, etc.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <p class="font-semibold mb-1">Step 2: Upload the Update (This Page)</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2 text-blue-800">
+                        <li>Fill in the version number using semantic versioning (e.g., 1.2.0)</li>
+                        <li>Add a clear description and changelog</li>
+                        <li>Upload your prepared ZIP file (max 500MB)</li>
+                        <li>Check appropriate options (migration, cache clear, restart)</li>
+                        <li>Click "Upload Update" - this only UPLOADS, does not apply yet</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <p class="font-semibold mb-1">Step 3: Apply the Update</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2 text-blue-800">
+                        <li>Go to System Updates list and find your uploaded update</li>
+                        <li>Review the details carefully</li>
+                        <li>Click "Apply Update" button to install</li>
+                        <li>The system will extract files, run migrations (if needed), and clear cache</li>
+                        <li>Wait for success confirmation before using the system</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Box -->
+<div class="mt-4 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+    <div class="flex">
+        <svg class="h-5 w-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
         </svg>
-        <div>
-            <h4 class="text-red-800 font-semibold">Warning:</h4>
-            <ul class="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
-                <li>Ensure the ZIP file contains only application files (app/, resources/, database/, etc.)</li>
-                <li>DO NOT include .env file, storage/app, or storage/framework directories</li>
+        <div class="flex-1">
+            <h4 class="text-red-800 font-semibold mb-2">⚠️ Important Warnings:</h4>
+            <ul class="text-sm text-red-700 list-disc list-inside space-y-1">
+                <li><strong>ALWAYS backup database and files before applying updates to production</strong></li>
                 <li>Test the update package in a development/staging environment first</li>
-                <li>Always backup database and files before applying updates to production</li>
-                <li>Update will NOT affect user accounts, credentials, roles, or existing data</li>
+                <li>Ensure server has write permissions for: app/, config/, public/, resources/, routes/, database/</li>
+                <li>Schedule updates during low-traffic periods to minimize user impact</li>
+                <li>Update will NOT affect user data, but may modify database schema if migrations are included</li>
+                <li>If update fails, the system will rollback changes - check error logs for details</li>
             </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Troubleshooting Box -->
+<div class="mt-4 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+    <div class="flex">
+        <svg class="h-5 w-5 text-yellow-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        <div class="flex-1">
+            <h4 class="text-yellow-800 font-semibold mb-2">🔧 Common Issues & Solutions:</h4>
+            <div class="text-sm text-yellow-900 space-y-2">
+                <div>
+                    <p class="font-semibold">Issue: "Update file not found" error when applying</p>
+                    <p class="ml-2">→ Solution: Ensure storage/app/private/system-updates/ directory exists with write permissions (755)</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Issue: Upload fails or times out</p>
+                    <p class="ml-2">→ Solution: Check PHP upload_max_filesize and post_max_size settings (should be at least 512M)</p>
+                </div>
+                <div>
+                    <p class="font-semibold">Issue: Update applies but site shows errors</p>
+                    <p class="ml-2">→ Solution: Run manually: php artisan cache:clear && php artisan config:clear && php artisan view:clear</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
