@@ -478,34 +478,58 @@ if (countrySelect.value) {
     console.log('Geocode response:', data);
     
     if (data.success && data.matches) {
-        // Set location dropdowns
+        // Set location dropdowns with proper async handling
         if (data.matches.country_id) {
             countrySelect.value = data.matches.country_id;
-            countrySelect.dispatchEvent(new Event('change'));
-            
-            // Wait for states to load
-            setTimeout(() => {
-                if (data.matches.state_id) {
-                    stateSelect.value = data.matches.state_id;
-                    stateSelect.dispatchEvent(new Event('change'));
-                    
-                    // Wait for LGAs to load
-                    setTimeout(() => {
+
+            // Load states for selected country
+            if (data.matches.state_id) {
+                fetch(`/api/states/${data.matches.country_id}`)
+                    .then(response => response.json())
+                    .then(states => {
+                        stateSelect.innerHTML = '<option value="">-- Select State --</option>';
+                        states.forEach(state => {
+                            const option = document.createElement('option');
+                            option.value = state.id;
+                            option.textContent = state.name;
+                            stateSelect.appendChild(option);
+                        });
+                        stateSelect.disabled = false;
+
+                        // Set the matched state
+                        stateSelect.value = data.matches.state_id;
+
+                        // Load LGAs for selected state
                         if (data.matches.lga_id) {
-                            lgaSelect.value = data.matches.lga_id;
-                            updateProgress();
+                            fetch(`/api/lgas/${data.matches.state_id}`)
+                                .then(response => response.json())
+                                .then(lgas => {
+                                    lgaSelect.innerHTML = '<option value="">-- Select LGA --</option>';
+                                    lgas.forEach(lga => {
+                                        const option = document.createElement('option');
+                                        option.value = lga.id;
+                                        option.textContent = lga.name;
+                                        lgaSelect.appendChild(option);
+                                    });
+                                    lgaSelect.disabled = false;
+
+                                    // Set the matched LGA
+                                    lgaSelect.value = data.matches.lga_id;
+                                    updateProgress();
+                                })
+                                .catch(error => console.error('Error loading LGAs:', error));
                         }
-                    }, 1000);
-                }
-            }, 1000);
+                    })
+                    .catch(error => console.error('Error loading states:', error));
+            }
         }
-        
+
         // Display appropriate message
         let message = '✅ Location detected!';
         if (data.address && data.address.formatted) {
             message = '✅ ' + data.address.formatted;
         }
-        
+
         status.textContent = message;
         status.className = 'text-xs text-green-600 mt-2';
     } else {
