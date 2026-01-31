@@ -9,7 +9,7 @@ class ChatbotConversation extends Model
     protected $fillable = [
         'user_id',
         'session_id',
-        'status',
+        'is_active',
         'human_requested',
         'human_requested_at',
         'human_takeover',
@@ -19,6 +19,7 @@ class ChatbotConversation extends Model
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
         'human_requested' => 'boolean',
         'human_takeover' => 'boolean',
         'notification_sent' => 'boolean',
@@ -48,6 +49,6 @@ class ChatbotConversation extends Model
 
     public function scopeActiveTakeovers($query)
     {
-        return $query->where('human_takeover', true)->where('status', 'active');
+        return $query->where('human_takeover', true)->where('is_active', true);
     }
 }

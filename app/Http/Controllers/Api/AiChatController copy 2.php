@@ -182,7 +182,7 @@ class AiChatController extends Controller
             // Create or get conversation
             $conversation = ChatbotConversation::firstOrCreate([
                 'user_id' => $userId,
-                'status' => 'active',
+                'is_active' => true,
             ]);
 
             // Save messages

@@ -262,7 +262,7 @@ class AiChatController extends Controller
         return ChatbotConversation::firstOrCreate(
             [
                 'user_id' => $userId,
-                'status' => 'active',
+                'is_active' => true,
             ],
             [
                 'session_id' => session()->getId(),
