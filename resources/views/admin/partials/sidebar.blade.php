@@ -201,7 +201,11 @@
                         </svg>
                         AI Chatbot
                         @php
-                            $humanRequests = \App\Models\ChatbotConversation::where('human_requested', true)->where('human_takeover', false)->count();
+                            try {
+                                $humanRequests = \App\Models\ChatbotConversation::where('human_requested', true)->where('human_takeover', false)->count();
+                            } catch (\Exception $e) {
+                                $humanRequests = 0;
+                            }
                         @endphp
                         @if($humanRequests > 0)
                         <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
