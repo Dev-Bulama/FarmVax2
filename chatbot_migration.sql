@@ -1,6 +1,10 @@
 -- FarmVax Chatbot Human Takeover Migration SQL
 -- Execute this directly in your MySQL database
--- Safe to run multiple times (will skip if columns already exist)
+--
+-- NOTE: The chatbot_conversations table uses 'is_active' as the status column,
+--       NOT a separate 'status' column. This is already in the table.
+--
+-- This migration adds human takeover functionality columns.
 
 -- Add human_requested column
 ALTER TABLE `chatbot_conversations`
