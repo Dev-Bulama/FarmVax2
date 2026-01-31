@@ -213,8 +213,9 @@ class UserImportController extends Controller
 
                 // Check for duplicate email
                 if (User::where('email', $data['email'])->exists()) {
-                    $import->addError($row, 'email', 'Email already exists: ' . $data['email']);
+                    $import->addError($row, 'duplicate', 'Email already exists, skipped: ' . $data['email']);
                     $import->incrementDuplicates();
+                    // Continue to next record instead of stopping
                     continue;
                 }
 
@@ -254,6 +255,26 @@ class UserImportController extends Controller
                         'approved_at' => now(),
                         'submitted_at' => now(),
                     ]);
+                } elseif ($import->user_type === 'farmer') {
+                    // Import livestock for farmers if provided
+                    if (!empty($data['livestock_type']) && !empty($data['livestock_count'])) {
+                        try {
+                            \App\Models\Livestock::create([
+                                'user_id' => $user->id,
+                                'type' => $data['livestock_type'],
+                                'count' => (int)($data['livestock_count'] ?? 0),
+                                'breed' => $data['livestock_breed'] ?? null,
+                                'age_group' => $data['livestock_age_group'] ?? 'adult',
+                                'health_status' => $data['livestock_health_status'] ?? 'healthy',
+                                'vaccination_status' => $data['livestock_vaccination_status'] ?? 'not_vaccinated',
+                                'last_vaccination_date' => !empty($data['last_vaccination_date']) ? date('Y-m-d', strtotime($data['last_vaccination_date'])) : null,
+                                'notes' => $data['livestock_notes'] ?? null,
+                            ]);
+                        } catch (\Exception $e) {
+                            // Log livestock creation error but don't fail user import
+                            \Log::warning("Failed to create livestock for user {$user->id}: " . $e->getMessage());
+                        }
+                    }
                 }
 
                 // Track imported user

@@ -74,75 +74,77 @@
     </form>
 </div>
 
-<!-- Bulk Actions -->
-<div class="bg-white rounded-lg shadow p-4 mb-6" x-data="{ selectedUsers: [], showBulkActions: false }">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-            <span class="text-sm text-gray-700">
-                <span x-text="selectedUsers.length"></span> user(s) selected
-            </span>
-            <button @click="showBulkActions = !showBulkActions"
-                    x-show="selectedUsers.length > 0"
-                    class="px-4 py-2 bg-[#11455B] text-white rounded-lg hover:bg-[#0d3345] transition text-sm">
-                Bulk Actions ▾
-            </button>
+<!-- Bulk Actions and Users Table Wrapper -->
+<div x-data="bulkUserSelection()">
+    <!-- Bulk Actions -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-700">
+                    <span x-text="selectedUsers.length"></span> user(s) selected
+                </span>
+                <button @click="showBulkActions = !showBulkActions"
+                        x-show="selectedUsers.length > 0"
+                        class="px-4 py-2 bg-[#11455B] text-white rounded-lg hover:bg-[#0d3345] transition text-sm">
+                    Bulk Actions ▾
+                </button>
+            </div>
+        </div>
+
+        <!-- Bulk Actions Dropdown -->
+        <div x-show="showBulkActions && selectedUsers.length > 0"
+             x-transition
+             class="mt-4 p-4 border-t border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-700 mb-3">Bulk Convert Selected Users To:</h4>
+            <div class="flex flex-wrap gap-2">
+                <form action="{{ route('admin.users.bulk-convert-role') }}" method="POST" class="inline">
+                    @csrf
+                    <input type="hidden" name="new_role" value="farmer">
+                    <template x-for="userId in selectedUsers" :key="userId">
+                        <input type="hidden" name="user_ids[]" :value="userId">
+                    </template>
+                    <button type="submit"
+                            onclick="return confirm('Convert selected users to Farmer? They will be logged out immediately.')"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+                        → Farmer
+                    </button>
+                </form>
+
+                <form action="{{ route('admin.users.bulk-convert-role') }}" method="POST" class="inline">
+                    @csrf
+                    <input type="hidden" name="new_role" value="animal_health_professional">
+                    <template x-for="userId in selectedUsers" :key="userId">
+                        <input type="hidden" name="user_ids[]" :value="userId">
+                    </template>
+                    <button type="submit"
+                            onclick="return confirm('Convert selected users to Professional? They will be logged out immediately.')"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                        → Professional
+                    </button>
+                </form>
+
+                <form action="{{ route('admin.users.bulk-convert-role') }}" method="POST" class="inline">
+                    @csrf
+                    <input type="hidden" name="new_role" value="volunteer">
+                    <template x-for="userId in selectedUsers" :key="userId">
+                        <input type="hidden" name="user_ids[]" :value="userId">
+                    </template>
+                    <button type="submit"
+                            onclick="return confirm('Convert selected users to Volunteer? They will be logged out immediately.')"
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+                        → Volunteer
+                    </button>
+                </form>
+            </div>
+
+            <div class="mt-3 text-xs text-gray-500">
+                <strong>Note:</strong> Admin users and users already having the target role will be skipped automatically.
+            </div>
         </div>
     </div>
 
-    <!-- Bulk Actions Dropdown -->
-    <div x-show="showBulkActions && selectedUsers.length > 0"
-         class="mt-4 p-4 border-t border-gray-200"
-         style="display: none;">
-        <h4 class="text-sm font-semibold text-gray-700 mb-3">Bulk Convert Selected Users To:</h4>
-        <div class="flex flex-wrap gap-2">
-            <form action="{{ route('admin.users.bulk-convert-role') }}" method="POST" class="inline">
-                @csrf
-                <input type="hidden" name="new_role" value="farmer">
-                <template x-for="userId in selectedUsers" :key="userId">
-                    <input type="hidden" name="user_ids[]" :value="userId">
-                </template>
-                <button type="submit"
-                        onclick="return confirm('Convert selected users to Farmer? They will be logged out immediately.')"
-                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
-                    → Farmer
-                </button>
-            </form>
-
-            <form action="{{ route('admin.users.bulk-convert-role') }}" method="POST" class="inline">
-                @csrf
-                <input type="hidden" name="new_role" value="animal_health_professional">
-                <template x-for="userId in selectedUsers" :key="userId">
-                    <input type="hidden" name="user_ids[]" :value="userId">
-                </template>
-                <button type="submit"
-                        onclick="return confirm('Convert selected users to Professional? They will be logged out immediately.')"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                    → Professional
-                </button>
-            </form>
-
-            <form action="{{ route('admin.users.bulk-convert-role') }}" method="POST" class="inline">
-                @csrf
-                <input type="hidden" name="new_role" value="volunteer">
-                <template x-for="userId in selectedUsers" :key="userId">
-                    <input type="hidden" name="user_ids[]" :value="userId">
-                </template>
-                <button type="submit"
-                        onclick="return confirm('Convert selected users to Volunteer? They will be logged out immediately.')"
-                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
-                    → Volunteer
-                </button>
-            </form>
-        </div>
-
-        <div class="mt-3 text-xs text-gray-500">
-            <strong>Note:</strong> Admin users and users already having the target role will be skipped automatically.
-        </div>
-    </div>
-</div>
-
-<!-- Users Table -->
-<div class="bg-white rounded-lg shadow overflow-hidden" x-data="bulkUserSelection()">
+    <!-- Users Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -329,6 +331,7 @@
         </table>
     </div>
 </div>
+</div>
 
 <!-- Pagination -->
 @if($users->hasPages())
@@ -340,17 +343,8 @@
 <script>
 function bulkUserSelection() {
     return {
-        init() {
-            // Watch for changes in selectedUsers and update parent component
-            this.$watch('selectedUsers', (value) => {
-                // Sync with parent bulk actions component
-                const bulkActionsDiv = document.querySelector('[x-data*="selectedUsers"]');
-                if (bulkActionsDiv && bulkActionsDiv.__x) {
-                    bulkActionsDiv.__x.$data.selectedUsers = value;
-                }
-            });
-        },
         selectedUsers: [],
+        showBulkActions: false,
         toggleAll(event) {
             const checkboxes = document.querySelectorAll('.user-checkbox');
             this.selectedUsers = [];
@@ -365,9 +359,6 @@ function bulkUserSelection() {
                     checkbox.checked = false;
                 });
             }
-
-            // Update parent component
-            this.updateParent();
         },
         toggleUser(userId, event) {
             if (event.target.checked) {
@@ -379,16 +370,6 @@ function bulkUserSelection() {
                 if (index > -1) {
                     this.selectedUsers.splice(index, 1);
                 }
-            }
-
-            // Update parent component
-            this.updateParent();
-        },
-        updateParent() {
-            // Sync selected users with parent bulk actions component
-            const bulkActionsDiv = document.querySelector('[x-data*="selectedUsers"]');
-            if (bulkActionsDiv && bulkActionsDiv.__x) {
-                bulkActionsDiv.__x.$data.selectedUsers = this.selectedUsers;
             }
         }
     };
