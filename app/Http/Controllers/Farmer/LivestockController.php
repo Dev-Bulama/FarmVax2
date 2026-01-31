@@ -63,27 +63,43 @@ class LivestockController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'livestock_type' => 'required|in:cattle,goat,sheep,poultry,pig,other',
+            'livestock_type' => 'required|in:cattle,goat,goats,sheep,poultry,pig,pigs,fish,other',
             'tag_number' => 'required|string|max:100|unique:livestock',
             'breed' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date|before:today',
             'gender' => 'required|in:male,female',
-            'health_status' => 'required|in:healthy,sick,under_treatment,recovering',
+            'health_status' => 'required|in:healthy,sick,under_treatment,recovering,deceased',
             'acquisition_date' => 'nullable|date',
             'acquisition_method' => 'nullable|in:birth,purchase,gift,other',
             'notes' => 'nullable|string|max:1000',
+            'name' => 'nullable|string|max:255',
+            'age_years' => 'nullable|integer|min:0',
+            'age_months' => 'nullable|integer|min:0|max:11',
+            'weight_kg' => 'nullable|numeric|min:0',
+            'color_markings' => 'nullable|string|max:255',
+            'is_vaccinated' => 'nullable|boolean',
+            'herd_group_id' => 'nullable|exists:herd_groups,id',
         ]);
 
         Livestock::create([
             'user_id' => Auth::id(),
+            'owner_id' => Auth::id(),  // Also set owner_id for compatibility
             'livestock_type' => $validated['livestock_type'],
             'tag_number' => $validated['tag_number'],
+            'name' => $validated['name'] ?? null,
             'breed' => $validated['breed'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
             'gender' => $validated['gender'],
             'health_status' => $validated['health_status'],
             'acquisition_date' => $validated['acquisition_date'] ?? null,
             'acquisition_method' => $validated['acquisition_method'] ?? null,
+            'age_years' => $validated['age_years'] ?? null,
+            'age_months' => $validated['age_months'] ?? null,
+            'weight' => $validated['weight_kg'] ?? null,  // Map weight_kg to weight
+            'weight_unit' => 'kg',  // Set unit
+            'color' => $validated['color_markings'] ?? null,  // Map color_markings to color
+            'is_vaccinated' => $validated['is_vaccinated'] ?? false,
+            'herd_group_id' => $validated['herd_group_id'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
 
@@ -122,16 +138,35 @@ class LivestockController extends Controller
         $animal = Livestock::where('user_id', Auth::id())->findOrFail($id);
 
         $validated = $request->validate([
-            'livestock_type' => 'required|in:cattle,goat,sheep,poultry,pig,other',
+            'livestock_type' => 'required|in:cattle,goat,goats,sheep,poultry,pig,pigs,fish,other',
             'tag_number' => 'required|string|max:100|unique:livestock,tag_number,' . $id,
             'breed' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date|before:today',
             'gender' => 'required|in:male,female',
-            'health_status' => 'required|in:healthy,sick,under_treatment,recovering',
+            'health_status' => 'required|in:healthy,sick,under_treatment,recovering,deceased',
             'notes' => 'nullable|string|max:1000',
+            'name' => 'nullable|string|max:255',
+            'age_years' => 'nullable|integer|min:0',
+            'age_months' => 'nullable|integer|min:0|max:11',
+            'weight_kg' => 'nullable|numeric|min:0',
+            'color_markings' => 'nullable|string|max:255',
+            'is_vaccinated' => 'nullable|boolean',
+            'herd_group_id' => 'nullable|exists:herd_groups,id',
         ]);
 
-        $animal->update($validated);
+        // Map form fields to database fields
+        $updateData = $validated;
+        if (isset($validated['weight_kg'])) {
+            $updateData['weight'] = $validated['weight_kg'];
+            $updateData['weight_unit'] = 'kg';
+            unset($updateData['weight_kg']);
+        }
+        if (isset($validated['color_markings'])) {
+            $updateData['color'] = $validated['color_markings'];
+            unset($updateData['color_markings']);
+        }
+
+        $animal->update($updateData);
 
         return redirect()
             ->route('individual.livestock.index')
