@@ -25,6 +25,7 @@ class Livestock extends Model
     protected $fillable = [
         'farm_record_id',
         'user_id',
+        'owner_id',  // Added for farmer livestock management
         'recorded_by',
         'tag_number',
         'name',
@@ -87,6 +88,7 @@ class Livestock extends Model
         'primary_image',
         'notes',
         'custom_fields',
+        'herd_group_id',  // Added for herd group assignment
     ];
 
     /**

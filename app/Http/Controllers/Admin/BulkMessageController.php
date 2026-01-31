@@ -71,27 +71,39 @@ class BulkMessageController extends Controller
         );
 
         $validated['total_recipients'] = $recipients->count();
-        $validated['recipient_data'] = json_encode([
+
+        // Store recipient data as array (model will auto-convert to JSON)
+        $validated['recipient_data'] = [
             'target_type' => $validated['target_type'],
             'target_roles' => $validated['target_roles'] ?? [],
             'country_id' => $validated['country_id'] ?? null,
             'state_id' => $validated['state_id'] ?? null,
             'lga_id' => $validated['lga_id'] ?? null,
             'specific_users' => $validated['specific_users'] ?? [],
-        ]);
+        ];
 
         DB::beginTransaction();
         try {
+            // Create the message first
             $bulkMessage = BulkMessage::create($validated);
+            DB::commit();
 
-            // If send now, process sending
+            // If send now, process sending (outside transaction so message is saved even if sending fails)
             if ($request->has('send_now')) {
-                $this->sendMessage($bulkMessage, $recipients);
+                try {
+                    $this->sendMessage($bulkMessage, $recipients);
+                    return redirect()->route('admin.bulk-messages.index')
+                        ->with('success', 'Bulk message sent successfully to ' . $recipients->count() . ' recipients!');
+                } catch (\Exception $e) {
+                    // Message was created but sending failed - save as draft
+                    $bulkMessage->update(['status' => 'draft']);
+                    return redirect()->route('admin.bulk-messages.index')
+                        ->with('warning', 'Message created but sending failed: ' . $e->getMessage() . '. Saved as draft.');
+                }
             }
 
-            DB::commit();
             return redirect()->route('admin.bulk-messages.index')
-                ->with('success', 'Bulk message created successfully!');
+                ->with('success', 'Bulk message saved as draft!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()
@@ -128,8 +140,9 @@ public function send($id)
         return back()->with('error', 'This message has already been sent!');
     }
 
-    $recipientData = json_decode($bulkMessage->recipient_data, true);
-    
+    // recipient_data is auto-cast to array by the model
+    $recipientData = $bulkMessage->recipient_data;
+
     // Handle case where recipient_data is null or empty
     if (!$recipientData || !isset($recipientData['target_type'])) {
         return back()->with('error', 'Invalid recipient data. Please recreate this message.');
