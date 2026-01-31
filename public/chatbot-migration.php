@@ -1,3 +1,158 @@
+<?php
+// Handle AJAX requests first
+if (isset($_GET['action'])) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+
+    $app = require_once __DIR__ . '/../bootstrap/app.php';
+    $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
+
+    header('Content-Type: application/json');
+
+    $action = $_GET['action'];
+    $logs = [];
+
+    function addLog($message) {
+        global $logs;
+        $logs[] = date('H:i:s') . ' - ' . $message;
+    }
+
+    if ($action === 'check') {
+        try {
+            addLog('Checking database schema...');
+
+            $columns = DB::select("SHOW COLUMNS FROM chatbot_conversations");
+            $columnNames = array_column($columns, 'Field');
+
+            addLog('Current columns: ' . implode(', ', $columnNames));
+
+            $requiredColumns = [
+                'human_requested',
+                'human_requested_at',
+                'human_takeover',
+                'human_takeover_at',
+                'handled_by_admin_id',
+                'notification_sent'
+            ];
+
+            $missingColumns = array_diff($requiredColumns, $columnNames);
+
+            if (empty($missingColumns)) {
+                addLog('✅ All required columns exist');
+                echo json_encode([
+                    'needs_migration' => false,
+                    'logs' => $logs
+                ]);
+            } else {
+                addLog('⚠️ Missing columns: ' . implode(', ', $missingColumns));
+                echo json_encode([
+                    'needs_migration' => true,
+                    'missing_columns' => $missingColumns,
+                    'logs' => $logs
+                ]);
+            }
+        } catch (Exception $e) {
+            addLog('❌ Error: ' . $e->getMessage());
+            echo json_encode([
+                'needs_migration' => true,
+                'error' => $e->getMessage(),
+                'logs' => $logs
+            ]);
+        }
+    } elseif ($action === 'migrate') {
+        try {
+            addLog('Starting migration...');
+
+            // Check if columns exist before adding
+            $existingColumns = DB::select("SHOW COLUMNS FROM chatbot_conversations");
+            $existingColumnNames = array_column($existingColumns, 'Field');
+
+            // Add columns only if they don't exist
+            if (!in_array('human_requested', $existingColumnNames)) {
+                addLog('Adding human_requested column...');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN human_requested TINYINT(1) DEFAULT 0 AFTER status');
+            } else {
+                addLog('human_requested column already exists, skipping...');
+            }
+
+            if (!in_array('human_requested_at', $existingColumnNames)) {
+                addLog('Adding human_requested_at column...');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN human_requested_at TIMESTAMP NULL AFTER human_requested');
+            } else {
+                addLog('human_requested_at column already exists, skipping...');
+            }
+
+            if (!in_array('human_takeover', $existingColumnNames)) {
+                addLog('Adding human_takeover column...');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN human_takeover TINYINT(1) DEFAULT 0 AFTER human_requested_at');
+            } else {
+                addLog('human_takeover column already exists, skipping...');
+            }
+
+            if (!in_array('human_takeover_at', $existingColumnNames)) {
+                addLog('Adding human_takeover_at column...');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN human_takeover_at TIMESTAMP NULL AFTER human_takeover');
+            } else {
+                addLog('human_takeover_at column already exists, skipping...');
+            }
+
+            if (!in_array('handled_by_admin_id', $existingColumnNames)) {
+                addLog('Adding handled_by_admin_id column...');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN handled_by_admin_id BIGINT UNSIGNED NULL AFTER human_takeover_at');
+            } else {
+                addLog('handled_by_admin_id column already exists, skipping...');
+            }
+
+            if (!in_array('notification_sent', $existingColumnNames)) {
+                addLog('Adding notification_sent column...');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN notification_sent TINYINT(1) DEFAULT 0 AFTER handled_by_admin_id');
+            } else {
+                addLog('notification_sent column already exists, skipping...');
+            }
+
+            // Add foreign key constraint
+            addLog('Checking for foreign key constraint...');
+            try {
+                // Check if constraint already exists
+                $constraints = DB::select("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chatbot_conversations' AND CONSTRAINT_NAME = 'fk_handled_by_admin'");
+
+                if (empty($constraints)) {
+                    addLog('Adding foreign key constraint...');
+                    DB::statement('ALTER TABLE chatbot_conversations ADD CONSTRAINT fk_handled_by_admin FOREIGN KEY (handled_by_admin_id) REFERENCES users(id) ON DELETE SET NULL');
+                } else {
+                    addLog('Foreign key constraint already exists, skipping...');
+                }
+            } catch (Exception $e) {
+                addLog('Foreign key error (might already exist): ' . $e->getMessage());
+            }
+
+            // Modify chatbot_messages sender_type enum
+            addLog('Updating chatbot_messages sender_type to include admin...');
+            try {
+                DB::statement("ALTER TABLE chatbot_messages MODIFY sender_type ENUM('user', 'bot', 'admin') DEFAULT 'user'");
+                addLog('sender_type updated successfully');
+            } catch (Exception $e) {
+                addLog('Enum modification note: ' . $e->getMessage());
+            }
+
+            addLog('✅ Migration completed successfully!');
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Database migration completed successfully. All columns added.',
+                'logs' => $logs
+            ]);
+        } catch (Exception $e) {
+            addLog('❌ Migration failed: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'logs' => $logs
+            ]);
+        }
+    }
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -132,121 +287,3 @@
     </script>
 </body>
 </html>
-
-<?php
-// Only run if accessed directly (not through Laravel routes)
-if (php_sapi_name() === 'cli-server' || isset($_GET['action'])) {
-    require_once __DIR__ . '/../vendor/autoload.php';
-
-    $app = require_once __DIR__ . '/../bootstrap/app.php';
-    $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
-
-    header('Content-Type: application/json');
-
-    $action = $_GET['action'] ?? 'check';
-    $logs = [];
-
-    function addLog($message) {
-        global $logs;
-        $logs[] = date('H:i:s') . ' - ' . $message;
-    }
-
-    if ($action === 'check') {
-        try {
-            addLog('Checking database schema...');
-
-            $columns = DB::select("SHOW COLUMNS FROM chatbot_conversations");
-            $columnNames = array_column($columns, 'Field');
-
-            addLog('Current columns: ' . implode(', ', $columnNames));
-
-            $requiredColumns = [
-                'human_requested',
-                'human_requested_at',
-                'human_takeover',
-                'human_takeover_at',
-                'handled_by_admin_id',
-                'notification_sent'
-            ];
-
-            $missingColumns = array_diff($requiredColumns, $columnNames);
-
-            if (empty($missingColumns)) {
-                addLog('✅ All required columns exist');
-                echo json_encode([
-                    'needs_migration' => false,
-                    'logs' => $logs
-                ]);
-            } else {
-                addLog('⚠️ Missing columns: ' . implode(', ', $missingColumns));
-                echo json_encode([
-                    'needs_migration' => true,
-                    'missing_columns' => $missingColumns,
-                    'logs' => $logs
-                ]);
-            }
-        } catch (Exception $e) {
-            addLog('❌ Error: ' . $e->getMessage());
-            echo json_encode([
-                'needs_migration' => true,
-                'error' => $e->getMessage(),
-                'logs' => $logs
-            ]);
-        }
-    } elseif ($action === 'migrate') {
-        try {
-            addLog('Starting migration...');
-
-            // Add columns to chatbot_conversations
-            addLog('Adding human_requested column...');
-            DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS human_requested TINYINT(1) DEFAULT 0 AFTER status');
-
-            addLog('Adding human_requested_at column...');
-            DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS human_requested_at TIMESTAMP NULL AFTER human_requested');
-
-            addLog('Adding human_takeover column...');
-            DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS human_takeover TINYINT(1) DEFAULT 0 AFTER human_requested_at');
-
-            addLog('Adding human_takeover_at column...');
-            DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS human_takeover_at TIMESTAMP NULL AFTER human_takeover');
-
-            addLog('Adding handled_by_admin_id column...');
-            DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS handled_by_admin_id BIGINT UNSIGNED NULL AFTER human_takeover_at');
-
-            addLog('Adding notification_sent column...');
-            DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN IF NOT EXISTS notification_sent TINYINT(1) DEFAULT 0 AFTER handled_by_admin_id');
-
-            addLog('Adding foreign key constraint...');
-            try {
-                DB::statement('ALTER TABLE chatbot_conversations ADD CONSTRAINT fk_handled_by_admin FOREIGN KEY (handled_by_admin_id) REFERENCES users(id) ON DELETE SET NULL');
-            } catch (Exception $e) {
-                addLog('Foreign key might already exist or error: ' . $e->getMessage());
-            }
-
-            // Modify chatbot_messages sender_type enum
-            addLog('Updating chatbot_messages sender_type to include admin...');
-            try {
-                DB::statement("ALTER TABLE chatbot_messages MODIFY sender_type ENUM('user', 'bot', 'admin') DEFAULT 'user'");
-            } catch (Exception $e) {
-                addLog('Enum modification error (might already be updated): ' . $e->getMessage());
-            }
-
-            addLog('✅ Migration completed successfully!');
-
-            echo json_encode([
-                'success' => true,
-                'message' => 'Database migration completed successfully. All columns added.',
-                'logs' => $logs
-            ]);
-        } catch (Exception $e) {
-            addLog('❌ Migration failed: ' . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'logs' => $logs
-            ]);
-        }
-    }
-    exit;
-}
-?>
