@@ -69,7 +69,7 @@ if (isset($_GET['action'])) {
             // Add columns only if they don't exist
             if (!in_array('human_requested', $existingColumnNames)) {
                 addLog('Adding human_requested column...');
-                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN human_requested TINYINT(1) DEFAULT 0 AFTER status');
+                DB::statement('ALTER TABLE chatbot_conversations ADD COLUMN human_requested TINYINT(1) DEFAULT 0 AFTER is_active');
             } else {
                 addLog('human_requested column already exists, skipping...');
             }
