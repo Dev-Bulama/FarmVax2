@@ -204,7 +204,7 @@ class RegisterController extends Controller
             'experience_years' => $request->experience_years ?? 0,
             'organization' => $request->organization,
             'specialization' => $request->specialization,
-            'verification_documents' => !empty($documents) ? json_encode($documents) : null,
+            'verification_documents' => !empty($documents) ? $documents : null,  // Model cast handles JSON encoding
             'approval_status' => 'pending',
             'submitted_at' => now(),
         ]);

@@ -56,9 +56,20 @@ class SystemUpdateController extends Controller
         ]);
 
         try {
+            // Ensure the system-updates directory exists
+            $updateDir = storage_path('app/private/system-updates');
+            if (!File::exists($updateDir)) {
+                File::makeDirectory($updateDir, 0755, true);
+            }
+
             $file = $request->file('update_file');
             $fileName = 'update_' . $validated['version'] . '_' . time() . '.zip';
             $filePath = $file->storeAs('system-updates', $fileName, 'local');
+
+            // Verify file was stored successfully
+            if (!$filePath || !Storage::disk('local')->exists($filePath)) {
+                throw new \Exception('Failed to store update file. Please check storage permissions for: ' . $updateDir);
+            }
 
             $version = SystemVersion::create([
                 'version' => $validated['version'],
@@ -109,11 +120,11 @@ class SystemUpdateController extends Controller
                 'backup_note' => 'Automatic backup before update to version ' . $version->version,
             ];
 
-            // Get the update file
-            $updateFilePath = storage_path('app/' . $version->update_file_path);
+            // Get the update file using Storage facade (disk-agnostic approach)
+            $updateFilePath = Storage::disk('local')->path($version->update_file_path);
 
             if (!file_exists($updateFilePath)) {
-                throw new \Exception('Update file not found: ' . $version->update_file_path);
+                throw new \Exception('Update file not found: ' . $updateFilePath . ' (stored as: ' . $version->update_file_path . ')');
             }
 
             // Extract update to temporary directory
@@ -201,8 +212,8 @@ class SystemUpdateController extends Controller
         }
 
         // Delete update file
-        if ($version->update_file_path && Storage::exists($version->update_file_path)) {
-            Storage::delete($version->update_file_path);
+        if ($version->update_file_path && Storage::disk('local')->exists($version->update_file_path)) {
+            Storage::disk('local')->delete($version->update_file_path);
         }
 
         $version->delete();
