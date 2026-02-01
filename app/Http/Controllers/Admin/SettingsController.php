@@ -150,9 +150,8 @@ public function updateSms(Request $request)
     ]);
 
     foreach ($validated as $key => $value) {
-        if ($value !== null) {
-            Setting::set($key, $value, 'string', 'sms');
-        }
+        // Save all values, including empty strings, to clear unused auth methods
+        Setting::set($key, $value ?? '', 'string', 'sms');
     }
 
     return redirect()->route('admin.settings.sms')
