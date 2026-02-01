@@ -8,6 +8,10 @@
     $chatbotSoundEnabled = \App\Models\Setting::get('chatbot_sound_enabled', '1') == '1';
     $chatbotShowBadge = \App\Models\Setting::get('chatbot_show_badge', '1') == '1';
 
+    // Generate CSS-safe color variables
+    $primaryColorRgb = sscanf($chatbotPrimaryColor, "#%02x%02x%02x");
+    $secondaryColorRgb = sscanf($chatbotSecondaryColor, "#%02x%02x%02x");
+
     // Size mappings
     $sizeMap = [
         'small' => ['bubble' => 'w-14 h-14', 'icon' => 'h-7 w-7', 'badge' => 'w-3 h-3'],
@@ -31,7 +35,7 @@
         <div class="p-3 md:p-4 flex items-center justify-between" style="background: linear-gradient(to right, {{ $chatbotPrimaryColor }}, {{ $chatbotSecondaryColor }});">
             <div class="flex items-center space-x-2 md:space-x-3">
                 <div class="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="h-5 w-5 md:h-6 md:w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: {{ $chatbotPrimaryColor }};">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                     </svg>
                 </div>
@@ -51,7 +55,7 @@
         <div id="chat-messages" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 bg-gray-50">
             <!-- Welcome Message -->
             <div class="flex items-start space-x-1.5 md:space-x-2">
-                <div class="w-7 h-7 md:w-8 md:h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <div class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: {{ $chatbotPrimaryColor }}">
                     <svg class="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                     </svg>
@@ -66,9 +70,10 @@
         <div class="p-3 md:p-4 bg-white border-t border-gray-200">
             <form id="chat-form" class="flex items-center space-x-2">
                 <input type="text" id="chat-input" placeholder="Type your message..."
-                       class="flex-1 px-3 md:px-4 py-2.5 md:py-2 text-sm md:text-base border border-gray-300 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent touch-manipulation"
+                       class="flex-1 px-3 md:px-4 py-2.5 md:py-2 text-sm md:text-base border border-gray-300 rounded-full focus:ring-2 focus:border-transparent touch-manipulation"
+                       style="--tw-ring-color: {{ $chatbotPrimaryColor }};"
                        autocomplete="off">
-                <button type="submit" id="send-button" class="bg-purple-600 text-white rounded-full p-3 md:p-2 hover:bg-purple-700 transition flex-shrink-0 touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center">
+                <button type="submit" id="send-button" class="text-white rounded-full p-3 md:p-2 transition flex-shrink-0 touch-manipulation min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center" style="background: {{ $chatbotPrimaryColor }};" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                     </svg>
@@ -254,7 +259,7 @@ document.getElementById('chat-form').addEventListener('submit', async function(e
         if (type === 'user') {
             messageDiv.className = 'flex items-start space-x-1.5 md:space-x-2 justify-end';
             messageDiv.innerHTML = `
-                <div class="bg-purple-600 text-white rounded-lg rounded-tr-none p-2.5 md:p-3 shadow-sm max-w-[85%] md:max-w-[80%] break-words">
+                <div class="text-white rounded-lg rounded-tr-none p-2.5 md:p-3 shadow-sm max-w-[85%] md:max-w-[80%] break-words" style="background: {{ $chatbotPrimaryColor }}">
                     <p class="text-sm leading-relaxed">${escapeHtml(text)}</p>
                 </div>
                 <div class="w-7 h-7 md:w-8 md:h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
@@ -266,7 +271,7 @@ document.getElementById('chat-form').addEventListener('submit', async function(e
         } else {
             messageDiv.className = 'flex items-start space-x-1.5 md:space-x-2';
             messageDiv.innerHTML = `
-                <div class="w-7 h-7 md:w-8 md:h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <div class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: {{ $chatbotPrimaryColor }}">
                     <svg class="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                     </svg>

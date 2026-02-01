@@ -201,14 +201,18 @@ class SmsService
                         ];
                     }
 
-                    // Check for error codes (100 = invalid token, 101 = deactivated, 300 = missing params)
-                    if (isset($responseData['code']) && in_array($responseData['code'], [100, 101, 300])) {
-                        $errorMsg = match($responseData['code']) {
-                            100 => 'Invalid API credentials. Please check your API key in Settings → SMS',
-                            101 => 'Your Kudi SMS account has been deactivated. Please contact Kudi SMS support',
-                            300 => 'Missing required parameters. Please ensure Sender ID is set',
-                            default => $responseData['message'] ?? 'Unknown error'
+                    // Check for error codes and errno field
+                    if (isset($responseData['code']) || isset($responseData['errno'])) {
+                        $errorCode = $responseData['code'] ?? $responseData['errno'] ?? null;
+
+                        $errorMsg = match((string)$errorCode) {
+                            '100' => 'Invalid API credentials. Please check your API key in Settings → SMS',
+                            '101' => 'Your Kudi SMS account has been deactivated. Please contact Kudi SMS support',
+                            '110' => 'Authentication failed. Please verify your username and password are correct. If using API key, make sure it\'s the correct key. Also confirm your Sender ID is registered with Kudi SMS.',
+                            '300' => 'Missing required parameters. Please ensure Sender ID is set',
+                            default => $responseData['message'] ?? $responseData['error'] ?? 'SMS sending failed'
                         };
+
                         return [
                             'success' => false,
                             'error' => $errorMsg
