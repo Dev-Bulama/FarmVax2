@@ -265,15 +265,23 @@
     const kudiAuthMethod = document.getElementById('kudi-auth-method');
     const kudiApiKeySection = document.getElementById('kudi-api-key-section');
     const kudiUsernameSection = document.getElementById('kudi-username-section');
+    const kudiApiKeyInput = document.querySelector('input[name="kudi_api_key"]');
+    const kudiUsernameInput = document.querySelector('input[name="kudi_username"]');
+    const kudiPasswordInput = document.querySelector('input[name="kudi_password"]');
 
     if (kudiAuthMethod) {
         kudiAuthMethod.addEventListener('change', function() {
             if (this.value === 'api_key') {
                 kudiApiKeySection.classList.remove('hidden');
                 kudiUsernameSection.classList.add('hidden');
+                // Clear username/password when using API key
+                if (kudiUsernameInput) kudiUsernameInput.value = '';
+                if (kudiPasswordInput) kudiPasswordInput.value = '';
             } else {
                 kudiApiKeySection.classList.add('hidden');
                 kudiUsernameSection.classList.remove('hidden');
+                // Clear API key when using username/password
+                if (kudiApiKeyInput) kudiApiKeyInput.value = '';
             }
         });
 
