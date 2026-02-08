@@ -409,7 +409,7 @@
             if (dropdown && dropdown.classList.contains('hidden')) {
                 toggleDropdown('userManagement');
             }
-        } else if (currentUrl.includes('/farm-records') || currentUrl.includes('/service-requests')) {
+        } else if (currentUrl.includes('/livestock') || currentUrl.includes('/farm-records') || currentUrl.includes('/service-requests')) {
             const dropdown = document.getElementById('records');
             if (dropdown && dropdown.classList.contains('hidden')) {
                 toggleDropdown('records');
