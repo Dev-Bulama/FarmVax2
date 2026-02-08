@@ -49,11 +49,11 @@
                 {{-- Tag Number --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Tag Number <span class="text-red-500">*</span>
+                        Tag Number <span class="text-gray-400">(optional)</span>
                     </label>
-                    <input type="text" name="tag_number" value="{{ old('tag_number') }}" required
+                    <input type="text" name="tag_number" value="{{ old('tag_number') }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-                           placeholder="e.g., COW-001">
+                           placeholder="e.g., COW-001 (optional)">
                 </div>
 
                 {{-- Name (Optional) --}}
@@ -73,11 +73,15 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                         <option value="">Select Type</option>
                         <option value="cattle" {{ old('livestock_type') == 'cattle' ? 'selected' : '' }}>🐄 Cattle</option>
-                        <option value="goats" {{ old('livestock_type') == 'goats' ? 'selected' : '' }}>🐐 Goats</option>
+                        <option value="goat" {{ old('livestock_type') == 'goat' ? 'selected' : '' }}>🐐 Goat</option>
                         <option value="sheep" {{ old('livestock_type') == 'sheep' ? 'selected' : '' }}>🐑 Sheep</option>
-                        <option value="pigs" {{ old('livestock_type') == 'pigs' ? 'selected' : '' }}>🐷 Pigs</option>
-                        <option value="poultry" {{ old('livestock_type') == 'poultry' ? 'selected' : '' }}>🐔 Poultry</option>
-                        <option value="fish" {{ old('livestock_type') == 'fish' ? 'selected' : '' }}>🐟 Fish</option>
+                        <option value="pig" {{ old('livestock_type') == 'pig' ? 'selected' : '' }}>🐷 Pig</option>
+                        <option value="chicken" {{ old('livestock_type') == 'chicken' ? 'selected' : '' }}>🐔 Poultry/Chicken</option>
+                        <option value="duck" {{ old('livestock_type') == 'duck' ? 'selected' : '' }}>🦆 Duck</option>
+                        <option value="rabbit" {{ old('livestock_type') == 'rabbit' ? 'selected' : '' }}>🐇 Rabbit</option>
+                        <option value="horse" {{ old('livestock_type') == 'horse' ? 'selected' : '' }}>🐴 Horse</option>
+                        <option value="donkey" {{ old('livestock_type') == 'donkey' ? 'selected' : '' }}>🫏 Donkey</option>
+                        <option value="other" {{ old('livestock_type') == 'other' ? 'selected' : '' }}>Other</option>
                     </select>
                 </div>
 
@@ -99,6 +103,7 @@
                         <option value="">Select Gender</option>
                         <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                         <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                        <option value="unknown" {{ old('gender') == 'unknown' ? 'selected' : '' }}>Unknown</option>
                     </select>
                 </div>
 
@@ -139,9 +144,9 @@
                     </label>
                     <select name="health_status" required
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
-                        <option value="healthy" {{ old('health_status') == 'healthy' ? 'selected' : '' }}>Healthy</option>
+                        <option value="healthy" {{ old('health_status', 'healthy') == 'healthy' ? 'selected' : '' }}>Healthy</option>
                         <option value="sick" {{ old('health_status') == 'sick' ? 'selected' : '' }}>Sick</option>
-                        <option value="under_treatment" {{ old('health_status') == 'under_treatment' ? 'selected' : '' }}>Under Treatment</option>
+                        <option value="recovering" {{ old('health_status') == 'recovering' ? 'selected' : '' }}>Recovering</option>
                         <option value="deceased" {{ old('health_status') == 'deceased' ? 'selected' : '' }}>Deceased</option>
                     </select>
                 </div>

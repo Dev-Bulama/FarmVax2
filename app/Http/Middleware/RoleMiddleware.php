@@ -61,8 +61,11 @@ class RoleMiddleware
 
         return match($role) {
             'admin' => redirect()->route('admin.dashboard')->with('error', $message),
+            'farmer' => redirect()->route('farmer.dashboard')->with('error', $message),
             'data_collector' => redirect()->route('data-collector.dashboard')->with('error', $message),
             'individual' => redirect()->route('individual.dashboard')->with('error', $message),
+            'animal_health_professional' => redirect()->route('professional.dashboard')->with('error', $message),
+            'volunteer' => redirect()->route('volunteer.dashboard')->with('error', $message),
             default => redirect()->route('login')->with('error', 'Invalid user role. Please contact support.'),
         };
     }
