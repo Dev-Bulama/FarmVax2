@@ -556,6 +556,14 @@ Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroy
         Route::post('/diagnostic', [App\Http\Controllers\Admin\HealthCheckController::class, 'runDiagnostic'])->name('diagnostic');
     });
 
+    // Livestock Management Routes
+    Route::prefix('livestock')->name('livestock.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\LivestockController::class, 'index'])->name('index');
+        Route::get('/{id}', [App\Http\Controllers\Admin\LivestockController::class, 'show'])->name('show');
+        Route::post('/import', [App\Http\Controllers\Admin\LivestockController::class, 'import'])->name('import');
+        Route::get('/import/template', [App\Http\Controllers\Admin\LivestockController::class, 'importTemplate'])->name('import.template');
+    });
+
 // Import/Export/Backup Routes
     Route::get('/import-export', [App\Http\Controllers\Admin\ImportExportController::class, 'index'])->name('import-export.index');
     

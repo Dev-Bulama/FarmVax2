@@ -72,11 +72,14 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                         <option value="">Select Type</option>
                         <option value="cattle" {{ old('livestock_type', $livestock->livestock_type) == 'cattle' ? 'selected' : '' }}>🐄 Cattle</option>
-                        <option value="goats" {{ old('livestock_type', $livestock->livestock_type) == 'goats' ? 'selected' : '' }}>🐐 Goats</option>
+                        <option value="goat" {{ old('livestock_type', $livestock->livestock_type) == 'goat' ? 'selected' : '' }}>🐐 Goat</option>
                         <option value="sheep" {{ old('livestock_type', $livestock->livestock_type) == 'sheep' ? 'selected' : '' }}>🐑 Sheep</option>
-                        <option value="pigs" {{ old('livestock_type', $livestock->livestock_type) == 'pigs' ? 'selected' : '' }}>🐷 Pigs</option>
-                        <option value="poultry" {{ old('livestock_type', $livestock->livestock_type) == 'poultry' ? 'selected' : '' }}>🐔 Poultry</option>
-                        <option value="fish" {{ old('livestock_type', $livestock->livestock_type) == 'fish' ? 'selected' : '' }}>🐟 Fish</option>
+                        <option value="pig" {{ old('livestock_type', $livestock->livestock_type) == 'pig' ? 'selected' : '' }}>🐷 Pig</option>
+                        <option value="chicken" {{ old('livestock_type', $livestock->livestock_type) == 'chicken' ? 'selected' : '' }}>🐔 Poultry</option>
+                        <option value="duck" {{ old('livestock_type', $livestock->livestock_type) == 'duck' ? 'selected' : '' }}>🦆 Duck</option>
+                        <option value="rabbit" {{ old('livestock_type', $livestock->livestock_type) == 'rabbit' ? 'selected' : '' }}>🐰 Rabbit</option>
+                        <option value="horse" {{ old('livestock_type', $livestock->livestock_type) == 'horse' ? 'selected' : '' }}>🐴 Horse</option>
+                        <option value="other" {{ old('livestock_type', $livestock->livestock_type) == 'other' ? 'selected' : '' }}>🦙 Other</option>
                     </select>
                 </div>
 
@@ -97,6 +100,7 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                         <option value="male" {{ old('gender', $livestock->gender) == 'male' ? 'selected' : '' }}>Male</option>
                         <option value="female" {{ old('gender', $livestock->gender) == 'female' ? 'selected' : '' }}>Female</option>
+                        <option value="unknown" {{ old('gender', $livestock->gender) == 'unknown' ? 'selected' : '' }}>Unknown</option>
                     </select>
                 </div>
 
@@ -117,7 +121,7 @@
                 {{-- Weight --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Weight (kg)</label>
-                    <input type="number" name="weight_kg" value="{{ old('weight_kg', $livestock->weight_kg) }}" min="0" step="0.1"
+                    <input type="number" name="weight_kg" value="{{ old('weight_kg', $livestock->weight) }}" min="0" step="0.1"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                 </div>
 
@@ -130,7 +134,7 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                         <option value="healthy" {{ old('health_status', $livestock->health_status) == 'healthy' ? 'selected' : '' }}>Healthy</option>
                         <option value="sick" {{ old('health_status', $livestock->health_status) == 'sick' ? 'selected' : '' }}>Sick</option>
-                        <option value="under_treatment" {{ old('health_status', $livestock->health_status) == 'under_treatment' ? 'selected' : '' }}>Under Treatment</option>
+                        <option value="recovering" {{ old('health_status', $livestock->health_status) == 'recovering' ? 'selected' : '' }}>Recovering</option>
                         <option value="deceased" {{ old('health_status', $livestock->health_status) == 'deceased' ? 'selected' : '' }}>Deceased</option>
                     </select>
                 </div>
