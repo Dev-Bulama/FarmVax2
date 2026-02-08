@@ -49,15 +49,15 @@ class LivestockController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'livestock_type' => 'required|string',
+            'livestock_type' => 'required|in:cattle,goat,sheep,pig,chicken,duck,turkey,rabbit,horse,donkey,other',
             'breed' => 'nullable|string|max:255',
-            'tag_number' => 'nullable|string|max:255',
+            'tag_number' => 'nullable|string|max:255|unique:livestock,tag_number',
             'name' => 'nullable|string|max:255',
-            'gender' => 'required|in:male,female',
+            'gender' => 'required|in:male,female,unknown',
             'date_of_birth' => 'nullable|date',
             'age_years' => 'nullable|integer|min:0',
             'age_months' => 'nullable|integer|min:0|max:11',
-            'health_status' => 'required|in:healthy,sick,under_treatment,deceased',
+            'health_status' => 'required|in:healthy,sick,recovering,deceased',
             'weight_kg' => 'nullable|numeric|min:0',
             'color_markings' => 'nullable|string',
             'herd_group_id' => 'nullable|exists:herd_groups,id',
@@ -66,6 +66,16 @@ class LivestockController extends Controller
         ]);
 
         $validated['user_id'] = Auth::id();
+
+        // Map form field names to database column names
+        if (isset($validated['weight_kg'])) {
+            $validated['weight'] = $validated['weight_kg'];
+            unset($validated['weight_kg']);
+        }
+        if (isset($validated['color_markings'])) {
+            $validated['color'] = $validated['color_markings'];
+            unset($validated['color_markings']);
+        }
 
         $livestock = Livestock::create($validated);
 
@@ -112,21 +122,31 @@ class LivestockController extends Controller
         $livestock = Livestock::where('user_id', Auth::id())->findOrFail($id);
 
         $validated = $request->validate([
-            'livestock_type' => 'required|string',
+            'livestock_type' => 'required|in:cattle,goat,sheep,pig,chicken,duck,turkey,rabbit,horse,donkey,other',
             'breed' => 'nullable|string|max:255',
-            'tag_number' => 'nullable|string|max:255',
+            'tag_number' => 'nullable|string|max:255|unique:livestock,tag_number,' . $livestock->id,
             'name' => 'nullable|string|max:255',
-            'gender' => 'required|in:male,female',
+            'gender' => 'required|in:male,female,unknown',
             'date_of_birth' => 'nullable|date',
             'age_years' => 'nullable|integer|min:0',
             'age_months' => 'nullable|integer|min:0|max:11',
-            'health_status' => 'required|in:healthy,sick,under_treatment,deceased',
+            'health_status' => 'required|in:healthy,sick,recovering,deceased',
             'weight_kg' => 'nullable|numeric|min:0',
             'color_markings' => 'nullable|string',
             'herd_group_id' => 'nullable|exists:herd_groups,id',
             'is_vaccinated' => 'nullable|boolean',
             'notes' => 'nullable|string',
         ]);
+
+        // Map form field names to database column names
+        if (isset($validated['weight_kg'])) {
+            $validated['weight'] = $validated['weight_kg'];
+            unset($validated['weight_kg']);
+        }
+        if (isset($validated['color_markings'])) {
+            $validated['color'] = $validated['color_markings'];
+            unset($validated['color_markings']);
+        }
 
         $oldHerdGroupId = $livestock->herd_group_id;
         $livestock->update($validated);

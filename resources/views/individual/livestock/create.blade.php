@@ -41,7 +41,7 @@
                                     'cattle' => ['name' => 'Cattle', 'icon' => '🐄'],
                                     'goat' => ['name' => 'Goat', 'icon' => '🐐'],
                                     'sheep' => ['name' => 'Sheep', 'icon' => '🐑'],
-                                    'poultry' => ['name' => 'Poultry', 'icon' => '🐔'],
+                                    'chicken' => ['name' => 'Poultry', 'icon' => '🐔'],
                                     'pig' => ['name' => 'Pig', 'icon' => '🐷'],
                                     'other' => ['name' => 'Other', 'icon' => '🦙'],
                                 ];
@@ -73,10 +73,10 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                                     Tag/ID Number <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="tag_number" value="{{ old('tag_number') }}" required
+                                <input type="text" name="tag_number" value="{{ old('tag_number') }}"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                        placeholder="e.g., CTL-001">
-                                <p class="text-xs text-gray-500 mt-1">Unique identifier for this animal</p>
+                                <p class="text-xs text-gray-500 mt-1">Unique identifier for this animal (optional)</p>
                                 @error('tag_number')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
@@ -157,15 +157,8 @@
                                     <span class="ml-2 text-sm font-semibold text-red-700">Sick</span>
                                 </label>
 
-                                <label class="flex items-center justify-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 {{ old('health_status') == 'under_treatment' ? 'border-yellow-500 bg-yellow-50' : '' }}">
-                                    <input type="radio" name="health_status" value="under_treatment" required
-                                           {{ old('health_status') == 'under_treatment' ? 'checked' : '' }}
-                                           class="h-4 w-4 text-yellow-600 focus:ring-yellow-500">
-                                    <span class="ml-2 text-sm font-semibold text-yellow-700">Treatment</span>
-                                </label>
-
                                 <label class="flex items-center justify-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 {{ old('health_status') == 'recovering' ? 'border-blue-500 bg-blue-50' : '' }}">
-                                    <input type="radio" name="health_status" value="recovering" required
+                                    <input type="radio" name="health_status" value="recovering"
                                            {{ old('health_status') == 'recovering' ? 'checked' : '' }}
                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                                     <span class="ml-2 text-sm font-semibold text-blue-700">Recovering</span>
