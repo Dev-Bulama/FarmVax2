@@ -14,7 +14,9 @@ class LivestockController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Livestock::where('user_id', Auth::id())
+        $user = Auth::user();
+
+        $query = Livestock::where('user_id', $user->id)
             ->orderBy('created_at', 'desc');
 
         // Search
@@ -38,7 +40,14 @@ class LivestockController extends Controller
 
         $livestock = $query->paginate(15);
 
-        return view('individual.livestock.index', compact('livestock'));
+        $stats = [
+            'total' => Livestock::where('user_id', $user->id)->count(),
+            'healthy' => Livestock::where('user_id', $user->id)->where('health_status', 'healthy')->count(),
+            'sick' => Livestock::where('user_id', $user->id)->whereIn('health_status', ['sick'])->count(),
+            'vaccinated' => Livestock::where('user_id', $user->id)->where('is_vaccinated', true)->count(),
+        ];
+
+        return view('individual.livestock.index', compact('livestock', 'stats'));
     }
 
     /**
@@ -63,14 +72,14 @@ class LivestockController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'livestock_type' => 'required|in:cattle,goat,goats,sheep,poultry,pig,pigs,fish,other',
-            'tag_number' => 'required|string|max:100|unique:livestock',
+            'livestock_type' => 'required|in:cattle,goat,sheep,pig,chicken,duck,turkey,rabbit,horse,donkey,other',
+            'tag_number' => 'nullable|string|max:100|unique:livestock',
             'breed' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date|before:today',
-            'gender' => 'required|in:male,female',
-            'health_status' => 'required|in:healthy,sick,under_treatment,recovering,deceased',
+            'gender' => 'required|in:male,female,unknown',
+            'health_status' => 'required|in:healthy,sick,recovering,deceased',
             'acquisition_date' => 'nullable|date',
-            'acquisition_method' => 'nullable|in:birth,purchase,gift,other',
+            'acquisition_method' => 'nullable|in:birth,purchase,gift,inheritance,other',
             'notes' => 'nullable|string|max:1000',
             'name' => 'nullable|string|max:255',
             'age_years' => 'nullable|integer|min:0',
@@ -138,12 +147,12 @@ class LivestockController extends Controller
         $animal = Livestock::where('user_id', Auth::id())->findOrFail($id);
 
         $validated = $request->validate([
-            'livestock_type' => 'required|in:cattle,goat,goats,sheep,poultry,pig,pigs,fish,other',
-            'tag_number' => 'required|string|max:100|unique:livestock,tag_number,' . $id,
+            'livestock_type' => 'required|in:cattle,goat,sheep,pig,chicken,duck,turkey,rabbit,horse,donkey,other',
+            'tag_number' => 'nullable|string|max:100|unique:livestock,tag_number,' . $id,
             'breed' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date|before:today',
-            'gender' => 'required|in:male,female',
-            'health_status' => 'required|in:healthy,sick,under_treatment,recovering,deceased',
+            'gender' => 'required|in:male,female,unknown',
+            'health_status' => 'required|in:healthy,sick,recovering,deceased',
             'notes' => 'nullable|string|max:1000',
             'name' => 'nullable|string|max:255',
             'age_years' => 'nullable|integer|min:0',
