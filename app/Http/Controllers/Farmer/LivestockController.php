@@ -94,6 +94,7 @@ class LivestockController extends Controller
             'user_id' => Auth::id(),
             'owner_id' => Auth::id(),  // Also set owner_id for compatibility
             'livestock_type' => $validated['livestock_type'],
+            'type' => $validated['livestock_type'],  // production DB requires this column
             'tag_number' => $validated['tag_number'],
             'name' => $validated['name'] ?? null,
             'breed' => $validated['breed'] ?? null,
@@ -174,6 +175,9 @@ class LivestockController extends Controller
             $updateData['color'] = $validated['color_markings'];
             unset($updateData['color_markings']);
         }
+
+        // Set type column (production DB requires this)
+        $updateData['type'] = $updateData['livestock_type'];
 
         $animal->update($updateData);
 

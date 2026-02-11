@@ -30,6 +30,7 @@ class Livestock extends Model
         'tag_number',
         'name',
         'livestock_type',
+        'type',           // Alias/legacy column - same as livestock_type
         'other_type',
         'breed',
         'breed_purity',
