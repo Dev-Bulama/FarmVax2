@@ -31,6 +31,7 @@ class Livestock extends Model
         'name',
         'livestock_type',
         'type',           // Alias/legacy column - same as livestock_type
+        'quantity',       // Number of animals this record represents (flock/batch)
         'other_type',
         'breed',
         'breed_purity',
@@ -115,6 +116,7 @@ class Livestock extends Model
             'feed_types' => 'array',
             'images' => 'array',
             'custom_fields' => 'array',
+            'quantity' => 'integer',
             'is_breeding_animal' => 'boolean',
             'quarantine_status' => 'boolean',
             'is_vaccinated' => 'boolean',
@@ -576,6 +578,10 @@ class Livestock extends Model
 
         // When creating an animal, set default values
         static::creating(function ($livestock) {
+            if (!$livestock->quantity || $livestock->quantity < 1) {
+                $livestock->quantity = 1;
+            }
+
             if (!$livestock->status) {
                 $livestock->status = 'active';
             }
