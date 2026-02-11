@@ -27,19 +27,19 @@ class DashboardController extends Controller
         // ========== LIVESTOCK STATISTICS ==========
         $totalLivestock = Livestock::where('user_id', $user->id)
             ->where('status', '!=', 'deceased')
-            ->count();
-            
+            ->sum('quantity');
+
         $healthyLivestock = Livestock::where('user_id', $user->id)
             ->where('health_status', 'healthy')
-            ->count();
-            
+            ->sum('quantity');
+
         $sickLivestock = Livestock::where('user_id', $user->id)
             ->whereIn('health_status', ['sick', 'under_treatment'])
-            ->count();
-            
+            ->sum('quantity');
+
         $quarantinedLivestock = Livestock::where('user_id', $user->id)
             ->where('quarantine_status', true)
-            ->count();
+            ->sum('quantity');
         
         // Calculate health score
         $healthScore = $totalLivestock > 0 

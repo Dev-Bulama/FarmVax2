@@ -41,10 +41,10 @@ class LivestockController extends Controller
         $livestock = $query->paginate(15);
 
         $stats = [
-            'total' => Livestock::where('user_id', $user->id)->count(),
-            'healthy' => Livestock::where('user_id', $user->id)->where('health_status', 'healthy')->count(),
-            'sick' => Livestock::where('user_id', $user->id)->whereIn('health_status', ['sick'])->count(),
-            'vaccinated' => Livestock::where('user_id', $user->id)->where('is_vaccinated', true)->count(),
+            'total' => Livestock::where('user_id', $user->id)->sum('quantity'),
+            'healthy' => Livestock::where('user_id', $user->id)->where('health_status', 'healthy')->sum('quantity'),
+            'sick' => Livestock::where('user_id', $user->id)->whereIn('health_status', ['sick'])->sum('quantity'),
+            'vaccinated' => Livestock::where('user_id', $user->id)->where('is_vaccinated', true)->sum('quantity'),
         ];
 
         return view('individual.livestock.index', compact('livestock', 'stats'));

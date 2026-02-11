@@ -37,11 +37,11 @@ class DashboardController extends Controller
         // Get statistics
         $stats = [
             'total_farm_records' => $farmRecords->count(),
-            'total_livestock' => Livestock::where('owner_id', $user->id)->count(),
-            'healthy_livestock' => Livestock::where('owner_id', $user->id)->where('health_status', 'healthy')->count(),
-            'sick_livestock' => Livestock::where('owner_id', $user->id)->whereIn('health_status', ['sick', 'recovering'])->count(),
-            'vaccinated_livestock' => Livestock::where('owner_id', $user->id)->where('is_vaccinated', true)->count(),
-            'due_for_vaccination' => Livestock::where('owner_id', $user->id)->where('is_vaccinated', false)->count(),
+            'total_livestock' => Livestock::where('owner_id', $user->id)->sum('quantity'),
+            'healthy_livestock' => Livestock::where('owner_id', $user->id)->where('health_status', 'healthy')->sum('quantity'),
+            'sick_livestock' => Livestock::where('owner_id', $user->id)->whereIn('health_status', ['sick', 'recovering'])->sum('quantity'),
+            'vaccinated_livestock' => Livestock::where('owner_id', $user->id)->where('is_vaccinated', true)->sum('quantity'),
+            'due_for_vaccination' => Livestock::where('owner_id', $user->id)->where('is_vaccinated', false)->sum('quantity'),
             'total_vaccinations' => VaccinationHistory::where('user_id', $user->id)->count(),
             'recent_vaccinations' => VaccinationHistory::where('user_id', $user->id)
                 ->where('vaccination_date', '>=', now()->subMonth())

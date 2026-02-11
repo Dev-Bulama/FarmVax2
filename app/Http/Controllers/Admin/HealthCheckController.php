@@ -280,8 +280,8 @@ class HealthCheckController extends Controller
             'farmers' => User::where('role', 'farmer')->count(),
             'professionals' => User::where('role', 'animal_health_professional')->count(),
             'volunteers' => User::where('role', 'volunteer')->count(),
-            'livestock_total' => Livestock::count(),
-            'livestock_today' => Livestock::whereDate('created_at', today())->count(),
+            'livestock_total' => Livestock::sum('quantity'),
+            'livestock_today' => Livestock::whereDate('created_at', today())->sum('quantity'),
             'messages_sent' => BulkMessage::where('status', 'sent')->count(),
             'messages_pending' => BulkMessage::where('status', 'draft')->count(),
         ];
