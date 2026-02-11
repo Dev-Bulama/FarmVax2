@@ -38,6 +38,9 @@ function autoMap(array $headers): array {
         'quantity'       => null,
     ];
 
+    // Columns whose headers suggest phone/contact data — never map these to quantity
+    $phoneKeywords = ['phone', 'mobile', 'contact', 'tel', 'whatsapp', 'gsm', 'cell', 'fax'];
+
     $patterns = [
         'owner_email'    => ['email', 'e-mail', 'owner email', 'farmer email'],
         'livestock_type' => ['livestock type', 'animal type', 'type of livestock', 'type of animal', 'type of farm',
@@ -49,13 +52,21 @@ function autoMap(array $headers): array {
         'health_status'  => ['health', 'health status', 'condition', 'vaccination status', 'health condition'],
         'age_years'      => ['age', 'age (years)', 'age in years'],
         'notes'          => ['note', 'notes', 'remark', 'remarks', 'comment', 'additional', 'other'],
-        'quantity'       => ['total farm capacity', 'capacity', 'total capacity', 'quantity', 'number of animals',
-                             'total animals', 'total number', 'no. of animals', 'number', 'flock size',
-                             'herd size', 'total livestock', 'population', 'stock'],
+        'quantity'       => ['total farm capacity', 'total capacity', 'quantity', 'number of animals',
+                             'total animals', 'no. of animals', 'flock size', 'herd size',
+                             'total livestock', 'population', 'farm capacity', 'capacity'],
     ];
 
     foreach ($headers as $idx => $header) {
         $h = strtolower(trim((string)$header));
+
+        // Skip any column whose header looks like phone/contact data
+        $isPhone = false;
+        foreach ($phoneKeywords as $pk) {
+            if (str_contains($h, $pk)) { $isPhone = true; break; }
+        }
+        if ($isPhone) continue;
+
         foreach ($patterns as $field => $keywords) {
             if ($map[$field] !== null) continue; // already mapped
             foreach ($keywords as $kw) {
@@ -101,12 +112,9 @@ function normaliseType(string $raw): string {
     return 'other';
 }
 
-// ── Parse quantity from cell value ───────────────────────────────────────
+// ── Parse quantity from cell value (legacy — replaced by parseQtyVal) ────
 function parseQty($raw): int {
-    $s = str_replace(',', '', trim((string)$raw));
-    preg_match('/(\d+)/', $s, $m);
-    $n = isset($m[1]) ? (int)$m[1] : 1;
-    return max(1, $n);
+    return parseQtyVal($raw);
 }
 
 // ── Normalise gender ──────────────────────────────────────────────────────
@@ -115,6 +123,16 @@ function normaliseGender(string $raw): string {
     if (in_array($r, ['male', 'm', 'bull', 'cock', 'boar', 'ram', 'buck'])) return 'male';
     if (in_array($r, ['female', 'f', 'cow', 'hen', 'sow', 'ewe', 'doe'])) return 'female';
     return 'unknown';
+}
+
+// ── Parse quantity — cap at 10 million to catch phone numbers ─────────────
+function parseQtyVal($raw): int {
+    $s = str_replace(',', '', trim((string)$raw));
+    preg_match('/(\d+)/', $s, $m);
+    $n = isset($m[1]) ? (int)$m[1] : 1;
+    // Values over 10 million are almost certainly phone numbers or wrong column
+    if ($n > 10_000_000) return 1;
+    return max(1, $n);
 }
 
 // ── Normalise health status ───────────────────────────────────────────────
@@ -378,32 +396,66 @@ input[type=file] { background:#222; color:#eee; border:1px dashed #555; padding:
   <input type="hidden" name="step" value="map">
   <input type="hidden" name="sheet_path" value="<?= htmlspecialchars($sheetPath) ?>">
 
+  <div class="warn" style="margin-bottom:12px">
+    <strong>IMPORTANT — check the Quantity column mapping carefully.</strong>
+    The "Sample values" column shows what data will be used.
+    If you see <strong>phone numbers</strong> (7-11 digits like 08012345678) in the Quantity row,
+    change the dropdown to the correct "Total farm capacity" column.
+    Values over 10,000,000 are automatically treated as 1.
+  </div>
+
+  <?php
+  // Pre-compute sample values for each column index
+  $sampleVals = [];
+  foreach ($headers as $idx => $h) {
+      $vals = [];
+      foreach (array_slice($rows, 0, 3) as $r) {
+          $v = trim((string)($r[$idx] ?? ''));
+          if ($v !== '') $vals[] = $v;
+      }
+      $sampleVals[$idx] = implode(', ', array_slice($vals, 0, 2));
+  }
+  ?>
+
   <table>
-  <tr><th>Import Field</th><th>Required?</th><th>Map to Excel Column</th><th>Auto-detected?</th></tr>
+  <tr><th>Import Field</th><th>Req?</th><th>Map to Excel Column</th><th>Sample values from file</th></tr>
   <?php
   $fields = [
-      'owner_email'    => ['Owner Email',    false, 'Farmer email address in the system'],
-      'livestock_type' => ['Livestock Type', true,  'cattle, goat, sheep, pig, chicken, etc.'],
-      'breed'          => ['Breed',          false, ''],
-      'tag_number'     => ['Tag Number',     false, ''],
-      'name'           => ['Animal/Farm Name',false,''],
-      'gender'         => ['Gender',         false, 'male / female / unknown'],
-      'health_status'  => ['Health Status',  false, 'healthy / sick / recovering / deceased'],
-      'age_years'      => ['Age (years)',    false, ''],
-      'notes'          => ['Notes',          false, ''],
-      'quantity'       => ['Quantity',       true,  '"Total farm capacity" → number of animals'],
+      'owner_email'    => ['Owner Email',      false, 'Farmer email address in the system'],
+      'livestock_type' => ['Livestock Type',   true,  'cattle, goat, sheep, pig, chicken, etc.'],
+      'breed'          => ['Breed',            false, ''],
+      'tag_number'     => ['Tag Number',       false, ''],
+      'name'           => ['Animal/Farm Name', false, ''],
+      'gender'         => ['Gender',           false, 'male / female / unknown'],
+      'health_status'  => ['Health Status',    false, 'healthy / sick / recovering / deceased'],
+      'age_years'      => ['Age (years)',      false, ''],
+      'notes'          => ['Notes',            false, ''],
+      'quantity'       => ['Quantity 🔢',      true,  '"Total farm capacity" — must be a NUMBER like 200 or 20000, NOT a phone number'],
   ];
   foreach ($fields as $f => [$label, $req, $hint]): ?>
-  <tr>
+  <tr <?= $f === 'quantity' ? 'style="background:#1a2a0a"' : '' ?>>
     <td>
       <strong><?= $label ?></strong><?= $req ? ' <span class="req">*</span>' : '' ?>
       <?php if ($hint): ?><br><small style="color:#888"><?= $hint ?></small><?php endif; ?>
     </td>
-    <td><?= $req ? '<span class="req">Required</span>' : 'Optional' ?></td>
+    <td><?= $req ? '<span class="req">Yes</span>' : 'No' ?></td>
     <td><?= sel($colMap, $f, $headers) ?></td>
-    <td><?= isset($colMap[$f]) && $colMap[$f] !== null
-          ? '<span style="color:#8f8">Yes → <em>' . htmlspecialchars($headers[$colMap[$f]] ?? '') . '</em></span>'
-          : '<span style="color:#888">No</span>' ?>
+    <td style="color:#ccc;font-size:12px">
+      <?php
+        $ci = $colMap[$f] ?? null;
+        if ($ci !== null && isset($sampleVals[$ci])) {
+            $sv = $sampleVals[$ci];
+            // Warn if looks like phone number
+            $isPhoneLike = preg_match('/^\d{9,}/', str_replace([' ','-',','], '', $sv));
+            if ($f === 'quantity' && $isPhoneLike) {
+                echo '<span style="color:#f88;font-weight:bold">⚠ Looks like phone numbers: ' . htmlspecialchars($sv) . ' — change this!</span>';
+            } else {
+                echo htmlspecialchars($sv);
+            }
+        } else {
+            echo '<span style="color:#555">—</span>';
+        }
+      ?>
     </td>
   </tr>
   <?php endforeach; ?>

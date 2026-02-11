@@ -218,6 +218,13 @@ class LivestockController extends Controller
         }
 
         $qty = (int) $matches[1];
+
+        // Cap at 10 million — values above this are almost certainly phone numbers
+        // or other numeric data that got mapped to the wrong column.
+        if ($qty > 10_000_000) {
+            return 1;
+        }
+
         return $qty >= 1 ? $qty : 1;
     }
 
