@@ -142,7 +142,7 @@ class SystemUpdateController extends Controller
             }
 
             // Apply update: Copy files from temp directory to application root
-            $this->copyUpdateFiles($tempDir, base_path());
+            $filesCopied = $this->copyUpdateFiles($tempDir, base_path());
 
             // Run migrations if required
             if ($version->requires_migration) {
@@ -179,7 +179,7 @@ class SystemUpdateController extends Controller
             ]);
 
             return redirect()->route('admin.system-updates.index')
-                ->with('success', 'System successfully updated to version ' . $version->version . '!');
+                ->with('success', 'System successfully updated to version ' . $version->version . '! (' . $filesCopied . ' files updated)');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -236,35 +236,91 @@ class SystemUpdateController extends Controller
             \RecursiveIteratorIterator::SELF_FIRST
         );
 
+        $copied = 0;
+        $skippedFiles = [];
+        $failedFiles = [];
+
+        // Sensitive files/dirs to never overwrite
+        $skipPatterns = ['.env', '.git', 'storage/app', 'storage/framework', 'storage/logs'];
+
         foreach ($iterator as $item) {
-            $targetPath = $destination . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+            $subPath = $iterator->getSubPathName();
+            $targetPath = $destination . DIRECTORY_SEPARATOR . $subPath;
 
             if ($item->isDir()) {
                 if (!File::exists($targetPath)) {
                     File::makeDirectory($targetPath, 0755, true);
                 }
-            } else {
-                // Skip sensitive files
-                $skipFiles = ['.env', '.env.example', '.git', 'storage/app', 'storage/framework', 'storage/logs'];
-                $shouldSkip = false;
+                continue;
+            }
 
-                foreach ($skipFiles as $skipPattern) {
-                    if (strpos($iterator->getSubPathName(), $skipPattern) !== false) {
-                        $shouldSkip = true;
-                        break;
-                    }
-                }
-
-                if (!$shouldSkip) {
-                    // Create directory if it doesn't exist
-                    $targetDir = dirname($targetPath);
-                    if (!File::exists($targetDir)) {
-                        File::makeDirectory($targetDir, 0755, true);
-                    }
-
-                    File::copy($item, $targetPath);
+            // Skip sensitive files
+            $shouldSkip = false;
+            foreach ($skipPatterns as $pattern) {
+                if (strpos($subPath, $pattern) !== false) {
+                    $shouldSkip = true;
+                    $skippedFiles[] = $subPath;
+                    break;
                 }
             }
+            if ($shouldSkip) continue;
+
+            // Ensure target directory exists
+            $targetDir = dirname($targetPath);
+            if (!File::exists($targetDir)) {
+                if (!File::makeDirectory($targetDir, 0755, true)) {
+                    $failedFiles[] = $subPath . ' (could not create directory)';
+                    continue;
+                }
+            }
+
+            // Use getRealPath() to ensure absolute string path
+            $sourcePath = $item->getRealPath();
+
+            // Check source is readable
+            if (!is_readable($sourcePath)) {
+                $failedFiles[] = $subPath . ' (source not readable)';
+                continue;
+            }
+
+            // Check target is writable (if file exists, check it's writable; if not, check dir is writable)
+            if (file_exists($targetPath) && !is_writable($targetPath)) {
+                // Try to make writable
+                @chmod($targetPath, 0644);
+            }
+
+            if (!is_writable($targetDir)) {
+                $failedFiles[] = $subPath . ' (target directory not writable: ' . $targetDir . ')';
+                continue;
+            }
+
+            // Copy the file
+            if (copy($sourcePath, $targetPath)) {
+                @chmod($targetPath, 0644);
+                $copied++;
+            } else {
+                $failedFiles[] = $subPath . ' (copy failed)';
+            }
         }
+
+        \Log::info('System update file copy complete', [
+            'copied' => $copied,
+            'skipped' => count($skippedFiles),
+            'failed' => count($failedFiles),
+            'failed_files' => array_slice($failedFiles, 0, 20),
+        ]);
+
+        if (!empty($failedFiles)) {
+            $failCount = count($failedFiles);
+            $preview = implode(', ', array_slice($failedFiles, 0, 5));
+            $more = $failCount > 5 ? " and " . ($failCount - 5) . " more" : '';
+            throw new \Exception("Failed to copy {$failCount} file(s): {$preview}{$more}. Check file permissions on your hosting panel.");
+        }
+
+        if ($copied === 0 && empty($failedFiles)) {
+            throw new \Exception('No files were copied. The ZIP may be empty or contain only skipped files.');
+        }
+
+        return $copied;
     }
 }
