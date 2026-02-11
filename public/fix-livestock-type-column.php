@@ -94,18 +94,23 @@ if ($action === 'backfill_type') {
     }
 }
 
-// ── Action: add quantity column ────────────────────────────────────────────
+// ── Action: add quantity column (BIGINT to handle any large flock) ────────
 if ($action === 'add_quantity') {
     try {
         $exists = $pdo->query("SHOW COLUMNS FROM `livestock` LIKE 'quantity'")->fetch(PDO::FETCH_ASSOC);
         if ($exists) {
-            $messages[] = "INFO: `quantity` column already exists — no change needed.";
+            // If it exists as INT, upgrade to BIGINT
+            if (stripos($exists['Type'], 'bigint') === false) {
+                $pdo->exec("ALTER TABLE `livestock` MODIFY COLUMN `quantity` BIGINT UNSIGNED NOT NULL DEFAULT 1");
+                $messages[] = "SUCCESS: `quantity` column upgraded from INT to BIGINT UNSIGNED.";
+            } else {
+                $messages[] = "INFO: `quantity` column already exists as BIGINT — no change needed.";
+            }
         } else {
-            // Add after `type` column if it exists, otherwise after `livestock_type`
             $typeExists = $pdo->query("SHOW COLUMNS FROM `livestock` LIKE 'type'")->fetch(PDO::FETCH_ASSOC);
             $after = $typeExists ? 'AFTER `type`' : 'AFTER `livestock_type`';
-            $pdo->exec("ALTER TABLE `livestock` ADD COLUMN `quantity` INT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Number of animals this record represents' $after");
-            $messages[] = "SUCCESS: `quantity` column added (INT UNSIGNED NOT NULL DEFAULT 1).";
+            $pdo->exec("ALTER TABLE `livestock` ADD COLUMN `quantity` BIGINT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Number of animals this record represents' $after");
+            $messages[] = "SUCCESS: `quantity` column added (BIGINT UNSIGNED NOT NULL DEFAULT 1).";
         }
     } catch (Exception $e) {
         $errors[] = 'Add quantity column failed: ' . $e->getMessage();
@@ -118,6 +123,75 @@ if ($action === 'backfill_quantity') {
         $messages[] = "SUCCESS: Set `quantity` = 1 for {$count} rows that had NULL or zero.";
     } catch (Exception $e) {
         $errors[] = 'Backfill quantity failed: ' . $e->getMessage();
+    }
+}
+
+// ── Action: fix bad import (phone numbers in quantity) ────────────────────
+if ($action === 'fix_bad_quantity') {
+    try {
+        // Phone numbers are typically 7–11 digits (> 1,000,000). Legitimate farm
+        // quantities should not exceed 10 million animals.
+        $stmt = $pdo->query("SELECT COUNT(*) FROM `livestock` WHERE `quantity` > 10000000");
+        $badCount = (int)$stmt->fetchColumn();
+        if ($badCount === 0) {
+            $messages[] = "INFO: No records found with quantity > 10,000,000 — looks clean!";
+        } else {
+            $fixed = $pdo->exec("UPDATE `livestock` SET `quantity` = 1 WHERE `quantity` > 10000000");
+            $messages[] = "SUCCESS: Reset quantity = 1 for {$fixed} records that had values over 10,000,000 (likely phone numbers from wrong column mapping).";
+        }
+    } catch (Exception $e) {
+        $errors[] = 'Fix bad quantity failed: ' . $e->getMessage();
+    }
+}
+
+// ── Action: delete records imported today with suspicious quantity ─────────
+if ($action === 'delete_bad_import') {
+    try {
+        $today = date('Y-m-d');
+        $stmt = $pdo->query("SELECT COUNT(*) FROM `livestock` WHERE DATE(`created_at`) = '$today' AND `quantity` > 10000000");
+        $count = (int)$stmt->fetchColumn();
+        if ($count === 0) {
+            $messages[] = "INFO: No records found from today with quantity > 10,000,000.";
+        } else {
+            $deleted = $pdo->exec("DELETE FROM `livestock` WHERE DATE(`created_at`) = '$today' AND `quantity` > 10000000");
+            $messages[] = "SUCCESS: Deleted {$deleted} bad import records from today (quantity > 10M).";
+        }
+    } catch (Exception $e) {
+        $errors[] = 'Delete bad import failed: ' . $e->getMessage();
+    }
+}
+
+// ── Action: delete ALL livestock records (reset for fresh import) ──────────
+if ($action === 'reset_all_livestock') {
+    $confirm = $_GET['confirm'] ?? '';
+    if ($confirm !== 'YES_DELETE_ALL') {
+        $errors[] = 'Safety check failed. You must append &confirm=YES_DELETE_ALL to the URL to confirm this action.';
+    } else {
+        try {
+            $count = (int)$pdo->query("SELECT COUNT(*) FROM `livestock`")->fetchColumn();
+            $pdo->exec("DELETE FROM `livestock`");
+            // Reset auto-increment so IDs start fresh
+            $pdo->exec("ALTER TABLE `livestock` AUTO_INCREMENT = 1");
+            $messages[] = "SUCCESS: Deleted all {$count} livestock records. Table is now empty and ready for a fresh import.";
+        } catch (Exception $e) {
+            $errors[] = 'Reset failed: ' . $e->getMessage();
+        }
+    }
+}
+
+// ── Action: delete only records from today ────────────────────────────────
+if ($action === 'delete_todays_import') {
+    try {
+        $today = date('Y-m-d');
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM `livestock` WHERE DATE(`created_at`) = '$today'")->fetchColumn();
+        if ($count === 0) {
+            $messages[] = "INFO: No livestock records were created today — nothing to delete.";
+        } else {
+            $pdo->exec("DELETE FROM `livestock` WHERE DATE(`created_at`) = '$today'");
+            $messages[] = "SUCCESS: Deleted {$count} livestock records created today. You can now re-import with the corrected CSV.";
+        }
+    } catch (Exception $e) {
+        $errors[] = 'Delete today\'s records failed: ' . $e->getMessage();
     }
 }
 
@@ -137,16 +211,19 @@ if ($action === 'fix_all') {
         $errors[] = 'Fix 1 (type): ' . $e->getMessage();
     }
 
-    // 2. Add quantity column
+    // 2. Add / upgrade quantity column to BIGINT
     try {
         $exists = $pdo->query("SHOW COLUMNS FROM `livestock` LIKE 'quantity'")->fetch(PDO::FETCH_ASSOC);
         if (!$exists) {
             $typeExists = $pdo->query("SHOW COLUMNS FROM `livestock` LIKE 'type'")->fetch(PDO::FETCH_ASSOC);
             $after = $typeExists ? 'AFTER `type`' : 'AFTER `livestock_type`';
-            $pdo->exec("ALTER TABLE `livestock` ADD COLUMN `quantity` INT UNSIGNED NOT NULL DEFAULT 1 $after");
-            $messages[] = "Fix 2 SUCCESS: `quantity` column added.";
+            $pdo->exec("ALTER TABLE `livestock` ADD COLUMN `quantity` BIGINT UNSIGNED NOT NULL DEFAULT 1 $after");
+            $messages[] = "Fix 2 SUCCESS: `quantity` column added as BIGINT.";
+        } elseif (stripos($exists['Type'], 'bigint') === false) {
+            $pdo->exec("ALTER TABLE `livestock` MODIFY COLUMN `quantity` BIGINT UNSIGNED NOT NULL DEFAULT 1");
+            $messages[] = "Fix 2 SUCCESS: `quantity` column upgraded to BIGINT.";
         } else {
-            $messages[] = "Fix 2 SKIPPED: `quantity` column already exists.";
+            $messages[] = "Fix 2 SKIPPED: `quantity` column already exists as BIGINT.";
         }
     } catch (Exception $e) {
         $errors[] = 'Fix 2 (quantity): ' . $e->getMessage();
@@ -187,6 +264,7 @@ tr:nth-child(even) { background:#1a1a1a; }
 .btn:hover    { background:#0077ee; }
 .btn-green    { background:#006622; } .btn-green:hover  { background:#009933; }
 .btn-orange   { background:#885500; } .btn-orange:hover { background:#bb7700; }
+.btn-red      { background:#770000; } .btn-red:hover    { background:#aa0000; }
 .btn-big      { padding:14px 28px; font-size:16px; background:#006622; }
 .btn-big:hover{ background:#009933; }
 .hl-type { background:#2a2000!important; color:#ff8!important; }
@@ -266,12 +344,77 @@ tr:nth-child(even) { background:#1a1a1a; }
 <br><br>
 <strong style="color:#8ff">Fix 2 — `quantity` column (batch/flock import)</strong><br><br>
 <a class="btn btn-green" href="<?= $base ?>&action=add_quantity">
-  Add `quantity` column
+  Add / upgrade `quantity` column (BIGINT)
 </a>
 &nbsp;
 <a class="btn" href="<?= $base ?>&action=backfill_quantity">
   Backfill quantity = 1 for existing rows
 </a>
+
+<h2>Fix 3 — Clean up bad import data (phone numbers as quantity)</h2>
+<p style="color:#aaa;font-size:13px">
+  If livestock was imported with phone numbers in the quantity column (values like 7030964455),
+  use these buttons to fix or remove those records.
+</p>
+<?php
+$badStmt = $pdo->query("SELECT COUNT(*) FROM `livestock` WHERE `quantity` > 10000000");
+$badRows = (int)$badStmt->fetchColumn();
+$todayStmt = $pdo->query("SELECT COUNT(*) FROM `livestock` WHERE DATE(`created_at`) = '" . date('Y-m-d') . "' AND `quantity` > 10000000");
+$todayBad  = (int)$todayStmt->fetchColumn();
+?>
+<?php if ($badRows > 0): ?>
+<div class="warn">
+  Found <strong><?= number_format($badRows) ?> records</strong> with quantity &gt; 10,000,000
+  (<?= number_format($todayBad) ?> added today). These are almost certainly phone numbers in the wrong column.
+</div>
+<a class="btn btn-orange" href="<?= $base ?>&action=fix_bad_quantity">
+  Reset quantity to 1 for all bad records (<?= number_format($badRows) ?>)
+</a>
+&nbsp;
+<?php if ($todayBad > 0): ?>
+<a class="btn btn-red" href="<?= $base ?>&action=delete_bad_import"
+   onclick="return confirm('Delete <?= $todayBad ?> records imported today with quantity > 10M? This cannot be undone.')">
+  Delete today\'s bad import records (<?= number_format($todayBad) ?>)
+</a>
+<?php endif; ?>
+<?php else: ?>
+<div class="ok">No records found with quantity over 10,000,000 — data looks clean.</div>
+<?php endif; ?>
+
+<!-- ── RESET SECTION ───────────────────────────────────────── -->
+<h2 style="color:#f88">⚠ Reset Livestock Data</h2>
+<?php
+$totalRecords = (int)$pdo->query("SELECT COUNT(*) FROM `livestock`")->fetchColumn();
+$todayRecords = (int)$pdo->query("SELECT COUNT(*) FROM `livestock` WHERE DATE(`created_at`) = '" . date('Y-m-d') . "'")->fetchColumn();
+?>
+<p style="color:#aaa;font-size:13px">
+  Current total: <strong style="color:#fff"><?= number_format($totalRecords) ?> records</strong> in the livestock table.
+  Records added today: <strong style="color:#fff"><?= number_format($todayRecords) ?></strong>.
+</p>
+
+<?php if ($todayRecords > 0): ?>
+<div style="margin-bottom:16px">
+  <a class="btn btn-orange"
+     href="<?= $base ?>&action=delete_todays_import"
+     onclick="return confirm('Delete all <?= number_format($todayRecords) ?> records added TODAY (<?= date('Y-m-d') ?>)? This cannot be undone.')">
+    Delete today\'s import only (<?= number_format($todayRecords) ?> records)
+  </a>
+  <br><small style="color:#aaa">Removes only what was imported today. Previous records stay intact. Use this to undo a bad import and re-import correctly.</small>
+</div>
+<?php endif; ?>
+
+<div style="margin-top:10px;padding:16px;border:2px solid #660000;border-radius:6px;background:#1a0000">
+  <strong style="color:#f88">DANGER — Delete ALL livestock records</strong><br>
+  <p style="color:#aaa;font-size:12px;margin:8px 0">
+    This permanently deletes every livestock record in the database and resets the ID counter.
+    Use only if you want to start completely fresh.
+  </p>
+  <a class="btn btn-red"
+     href="<?= $base ?>&action=reset_all_livestock&confirm=YES_DELETE_ALL"
+     onclick="return confirm('DELETE ALL <?= number_format($totalRecords) ?> LIVESTOCK RECORDS?\n\nThis cannot be undone. Are you absolutely sure?')">
+    Delete ALL <?= number_format($totalRecords) ?> livestock records (full reset)
+  </a>
+</div>
 
 <!-- ── COLUMN LIST ─────────────────────────────────────────── -->
 <h2>All <code>livestock</code> columns</h2>

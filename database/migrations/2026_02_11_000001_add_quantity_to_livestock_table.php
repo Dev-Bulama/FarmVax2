@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('livestock', function (Blueprint $table) {
             // quantity: number of animals this record represents (e.g. flock of 20,000 chickens)
-            $table->unsignedInteger('quantity')->default(1)->after('type')
+            $table->unsignedBigInteger('quantity')->default(1)->after('type')
                   ->comment('Number of animals this record represents (for batch/flock entries)');
         });
     }

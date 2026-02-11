@@ -27,7 +27,7 @@ class DashboardController extends Controller
             'professionals' => AnimalHealthProfessional::where('approval_status', 'approved')->count(),
             'pending_professionals' => AnimalHealthProfessional::where('approval_status', 'pending')->count(),
             'volunteers' => Volunteer::count(),
-            'total_livestock' => DB::table('livestock')->count(),
+            'total_livestock' => DB::table('livestock')->sum('quantity') ?: DB::table('livestock')->count(),
             'total_farm_records' => DB::table('farm_records')->count(),
             'pending_service_requests' => DB::table('service_requests')->where('status', 'pending')->count(),
         ];
@@ -62,7 +62,7 @@ public function farmers()
     $stats = [
         'total' => User::where('role', 'farmer')->count(),
         'active' => User::where('role', 'farmer')->where('account_status', 'active')->count(),
-        'total_livestock' => DB::table('livestock')->count(),
+        'total_livestock' => DB::table('livestock')->sum('quantity') ?: DB::table('livestock')->count(),
         'total_farm_records' => DB::table('farm_records')->count(),
     ];
 
@@ -450,13 +450,13 @@ public function farmRecords()
             'total_volunteers' => Volunteer::count(),
         ];
 
-        // Livestock statistics
+        // Livestock statistics — use SUM(quantity) so batch/flock records count correctly
         $livestockStats = [
-            'total_livestock' => DB::table('livestock')->count(),
-            'total_cattle' => DB::table('livestock')->where('type', 'cattle')->count(),
-            'total_goats' => DB::table('livestock')->where('type', 'goat')->count(),
-            'total_sheep' => DB::table('livestock')->where('type', 'sheep')->count(),
-            'total_poultry' => DB::table('livestock')->where('type', 'poultry')->count(),
+            'total_livestock' => DB::table('livestock')->sum('quantity'),
+            'total_cattle'    => DB::table('livestock')->where('livestock_type', 'cattle')->sum('quantity'),
+            'total_goats'     => DB::table('livestock')->where('livestock_type', 'goat')->sum('quantity'),
+            'total_sheep'     => DB::table('livestock')->where('livestock_type', 'sheep')->sum('quantity'),
+            'total_poultry'   => DB::table('livestock')->whereIn('livestock_type', ['chicken', 'duck', 'turkey'])->sum('quantity'),
         ];
 
         // Service statistics
