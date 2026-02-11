@@ -148,7 +148,7 @@
                         </svg>
                         Livestock
                         <span class="ml-auto bg-[#2FCB6E] text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                            {{ number_format(\App\Models\Livestock::count()) }}
+                            {{ number_format(\App\Models\Livestock::sum('quantity')) }}
                         </span>
                     </a>
                     <a href="{{ route('admin.farm-records.index') }}"

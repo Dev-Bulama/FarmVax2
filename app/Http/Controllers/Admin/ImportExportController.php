@@ -40,7 +40,7 @@ class ImportExportController extends Controller
         $stats = [
             'total_users' => User::count(),
             'total_farm_records' => FarmRecord::count(),
-            'total_livestock' => Livestock::count(),
+            'total_livestock' => Livestock::sum('quantity'),
             'total_service_requests' => ServiceRequest::count(),
         ];
 

@@ -46,7 +46,7 @@ Route::get('/', function() {
 
         // Count livestock
         try {
-            $stats['livestock'] = \App\Models\Livestock::count();
+            $stats['livestock'] = \App\Models\Livestock::sum('quantity');
         } catch (\Exception $e) {
             $stats['livestock'] = 0;
         }
