@@ -161,6 +161,40 @@ if ($action === 'delete_bad_import') {
     }
 }
 
+// ── Action: delete ALL livestock records (reset for fresh import) ──────────
+if ($action === 'reset_all_livestock') {
+    $confirm = $_GET['confirm'] ?? '';
+    if ($confirm !== 'YES_DELETE_ALL') {
+        $errors[] = 'Safety check failed. You must append &confirm=YES_DELETE_ALL to the URL to confirm this action.';
+    } else {
+        try {
+            $count = (int)$pdo->query("SELECT COUNT(*) FROM `livestock`")->fetchColumn();
+            $pdo->exec("DELETE FROM `livestock`");
+            // Reset auto-increment so IDs start fresh
+            $pdo->exec("ALTER TABLE `livestock` AUTO_INCREMENT = 1");
+            $messages[] = "SUCCESS: Deleted all {$count} livestock records. Table is now empty and ready for a fresh import.";
+        } catch (Exception $e) {
+            $errors[] = 'Reset failed: ' . $e->getMessage();
+        }
+    }
+}
+
+// ── Action: delete only records from today ────────────────────────────────
+if ($action === 'delete_todays_import') {
+    try {
+        $today = date('Y-m-d');
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM `livestock` WHERE DATE(`created_at`) = '$today'")->fetchColumn();
+        if ($count === 0) {
+            $messages[] = "INFO: No livestock records were created today — nothing to delete.";
+        } else {
+            $pdo->exec("DELETE FROM `livestock` WHERE DATE(`created_at`) = '$today'");
+            $messages[] = "SUCCESS: Deleted {$count} livestock records created today. You can now re-import with the corrected CSV.";
+        }
+    } catch (Exception $e) {
+        $errors[] = 'Delete today\'s records failed: ' . $e->getMessage();
+    }
+}
+
 // ── Action: run BOTH critical fixes ───────────────────────────────────────
 if ($action === 'fix_all') {
     // 1. Fix type column
@@ -346,6 +380,41 @@ $todayBad  = (int)$todayStmt->fetchColumn();
 <?php else: ?>
 <div class="ok">No records found with quantity over 10,000,000 — data looks clean.</div>
 <?php endif; ?>
+
+<!-- ── RESET SECTION ───────────────────────────────────────── -->
+<h2 style="color:#f88">⚠ Reset Livestock Data</h2>
+<?php
+$totalRecords = (int)$pdo->query("SELECT COUNT(*) FROM `livestock`")->fetchColumn();
+$todayRecords = (int)$pdo->query("SELECT COUNT(*) FROM `livestock` WHERE DATE(`created_at`) = '" . date('Y-m-d') . "'")->fetchColumn();
+?>
+<p style="color:#aaa;font-size:13px">
+  Current total: <strong style="color:#fff"><?= number_format($totalRecords) ?> records</strong> in the livestock table.
+  Records added today: <strong style="color:#fff"><?= number_format($todayRecords) ?></strong>.
+</p>
+
+<?php if ($todayRecords > 0): ?>
+<div style="margin-bottom:16px">
+  <a class="btn btn-orange"
+     href="<?= $base ?>&action=delete_todays_import"
+     onclick="return confirm('Delete all <?= number_format($todayRecords) ?> records added TODAY (<?= date('Y-m-d') ?>)? This cannot be undone.')">
+    Delete today\'s import only (<?= number_format($todayRecords) ?> records)
+  </a>
+  <br><small style="color:#aaa">Removes only what was imported today. Previous records stay intact. Use this to undo a bad import and re-import correctly.</small>
+</div>
+<?php endif; ?>
+
+<div style="margin-top:10px;padding:16px;border:2px solid #660000;border-radius:6px;background:#1a0000">
+  <strong style="color:#f88">DANGER — Delete ALL livestock records</strong><br>
+  <p style="color:#aaa;font-size:12px;margin:8px 0">
+    This permanently deletes every livestock record in the database and resets the ID counter.
+    Use only if you want to start completely fresh.
+  </p>
+  <a class="btn btn-red"
+     href="<?= $base ?>&action=reset_all_livestock&confirm=YES_DELETE_ALL"
+     onclick="return confirm('DELETE ALL <?= number_format($totalRecords) ?> LIVESTOCK RECORDS?\n\nThis cannot be undone. Are you absolutely sure?')">
+    Delete ALL <?= number_format($totalRecords) ?> livestock records (full reset)
+  </a>
+</div>
 
 <!-- ── COLUMN LIST ─────────────────────────────────────────── -->
 <h2>All <code>livestock</code> columns</h2>
