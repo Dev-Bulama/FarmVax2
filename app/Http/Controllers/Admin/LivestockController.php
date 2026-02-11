@@ -154,6 +154,7 @@ class LivestockController extends Controller
                 Livestock::create([
                     'user_id' => $owner?->id,
                     'livestock_type' => $livestockType,
+                    'type' => $livestockType,  // production DB requires this column
                     'breed' => $breed ?: null,
                     'tag_number' => $tagNumber,
                     'name' => $name,

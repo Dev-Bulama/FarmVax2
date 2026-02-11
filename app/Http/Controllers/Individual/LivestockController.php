@@ -77,6 +77,9 @@ class LivestockController extends Controller
             unset($validated['color_markings']);
         }
 
+        // Set type = livestock_type to satisfy production DB column requirement
+        $validated['type'] = $validated['livestock_type'];
+
         $livestock = Livestock::create($validated);
 
         // Update herd group statistics if assigned
@@ -147,6 +150,9 @@ class LivestockController extends Controller
             $validated['color'] = $validated['color_markings'];
             unset($validated['color_markings']);
         }
+
+        // Keep type in sync with livestock_type
+        $validated['type'] = $validated['livestock_type'];
 
         $oldHerdGroupId = $livestock->herd_group_id;
         $livestock->update($validated);
