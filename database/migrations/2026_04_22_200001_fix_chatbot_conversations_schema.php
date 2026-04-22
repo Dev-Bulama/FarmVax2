@@ -67,6 +67,13 @@ return new class extends Migration
             });
         }
 
+        // Ensure chatbot_messages has sender_type (table from 000009 uses 'sender' instead)
+        if (Schema::hasTable('chatbot_messages') && !Schema::hasColumn('chatbot_messages', 'sender_type')) {
+            Schema::table('chatbot_messages', function (Blueprint $table) {
+                $table->enum('sender_type', ['user', 'bot', 'admin'])->default('user')->nullable();
+            });
+        }
+
         // Ensure chatbot_training_data exists
         if (!Schema::hasTable('chatbot_training_data')) {
             Schema::create('chatbot_training_data', function (Blueprint $table) {

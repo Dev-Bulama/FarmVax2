@@ -18,6 +18,14 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Storage proxy — serves uploaded files when php symlink() is unavailable
+    # (common on shared cPanel hosting). If a real symlink exists it takes
+    # priority because Apache serves existing files/dirs before this rule.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} ^/storage/
+    RewriteRule ^storage/(.+)$ storage-proxy.php?file=$1 [L,QSA]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
