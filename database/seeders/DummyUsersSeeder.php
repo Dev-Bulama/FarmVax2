@@ -23,19 +23,25 @@ class DummyUsersSeeder extends Seeder
         $lagosLga = $lagosState ? Lga::where('state_id', $lagosState->id)->first() : null;
         $abujaLga = $abujaState ? Lga::where('state_id', $abujaState->id)->first() : null;
 
+        // Pre-check which optional columns exist
+        $hasLatLng       = \Illuminate\Support\Facades\Schema::hasColumn('users', 'latitude');
+        $hasAccountStatus = \Illuminate\Support\Facades\Schema::hasColumn('users', 'account_status');
+        $hasStatus        = \Illuminate\Support\Facades\Schema::hasColumn('users', 'status');
+        $hasFarmName      = \Illuminate\Support\Facades\Schema::hasColumn('users', 'farm_name');
+
         // Admin — use firstOrCreate so re-running the seeder never fails on unique email
         $adminData = [
-            'name'           => 'Admin User',
-            'phone'          => '+2348012345678',
-            'password'       => Hash::make('admin123'),
-            'role'           => 'admin',
-            'address'        => '123 Admin Street, Abuja',
-            'state_id'       => $abujaState?->id,
-            'lga_id'         => $abujaLga?->id,
-            'account_status' => 'active',
-            'status'         => 'active',
+            'name'     => 'Admin User',
+            'phone'    => '+2348012345678',
+            'password' => Hash::make('admin123'),
+            'role'     => 'admin',
+            'address'  => '123 Admin Street, Abuja',
+            'state_id' => $abujaState?->id,
+            'lga_id'   => $abujaLga?->id,
         ];
-        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'latitude')) {
+        if ($hasAccountStatus) $adminData['account_status'] = 'active';
+        if ($hasStatus)        $adminData['status']         = 'active';
+        if ($hasLatLng) {
             $adminData['latitude']  = 9.0765;
             $adminData['longitude'] = 7.3986;
         }
@@ -78,19 +84,17 @@ class DummyUsersSeeder extends Seeder
             ],
         ];
 
-        $hasLatLon = \Illuminate\Support\Facades\Schema::hasColumn('users', 'latitude');
-
         foreach ($farmersData as $fd) {
             $base = [
-                'password'       => Hash::make('farmer123'),
-                'role'           => $fd['role'],
-                'address'        => $fd['address'],
-                'state_id'       => $fd['state_id'],
-                'lga_id'         => $fd['lga_id'],
-                'account_status' => 'active',
-                'status'         => 'active',
+                'password' => Hash::make('farmer123'),
+                'role'     => $fd['role'],
+                'address'  => $fd['address'],
+                'state_id' => $fd['state_id'],
+                'lga_id'   => $fd['lga_id'],
             ];
-            if ($hasLatLon) {
+            if ($hasAccountStatus) $base['account_status'] = 'active';
+            if ($hasStatus)        $base['status']         = 'active';
+            if ($hasLatLng) {
                 $base['latitude']  = $fd['lat'];
                 $base['longitude'] = $fd['lng'];
             }
@@ -145,15 +149,15 @@ class DummyUsersSeeder extends Seeder
 
         foreach ($professionalsData as $pd) {
             $base = [
-                'password'       => Hash::make('professional123'),
-                'role'           => 'animal_health_professional',
-                'address'        => $pd['address'],
-                'state_id'       => $pd['state_id'],
-                'lga_id'         => $pd['lga_id'],
-                'account_status' => 'active',
-                'status'         => 'active',
+                'password' => Hash::make('professional123'),
+                'role'     => 'animal_health_professional',
+                'address'  => $pd['address'],
+                'state_id' => $pd['state_id'],
+                'lga_id'   => $pd['lga_id'],
             ];
-            if ($hasLatLon) {
+            if ($hasAccountStatus) $base['account_status'] = 'active';
+            if ($hasStatus)        $base['status']         = 'active';
+            if ($hasLatLng) {
                 $base['latitude']  = $pd['lat'];
                 $base['longitude'] = $pd['lng'];
             }
@@ -200,15 +204,15 @@ class DummyUsersSeeder extends Seeder
 
         foreach ($volunteersData as $vd) {
             $base = [
-                'password'       => Hash::make('volunteer123'),
-                'role'           => 'volunteer',
-                'address'        => $vd['address'],
-                'state_id'       => $vd['state_id'],
-                'lga_id'         => $vd['lga_id'],
-                'account_status' => 'active',
-                'status'         => 'active',
+                'password' => Hash::make('volunteer123'),
+                'role'     => 'volunteer',
+                'address'  => $vd['address'],
+                'state_id' => $vd['state_id'],
+                'lga_id'   => $vd['lga_id'],
             ];
-            if ($hasLatLon) {
+            if ($hasAccountStatus) $base['account_status'] = 'active';
+            if ($hasStatus)        $base['status']         = 'active';
+            if ($hasLatLng) {
                 $base['latitude']  = $vd['lat'];
                 $base['longitude'] = $vd['lng'];
             }

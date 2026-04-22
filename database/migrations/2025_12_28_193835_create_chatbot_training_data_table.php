@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Table may already exist (created by 2025_12_26_000009 migration)
+        if (Schema::hasTable('chatbot_training_data')) {
+            return;
+        }
+
         Schema::create('chatbot_training_data', function (Blueprint $table) {
             $table->id();
             $table->string('title');
