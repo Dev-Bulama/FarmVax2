@@ -261,16 +261,20 @@ Route::post('/api/reverse-geocode', [App\Http\Controllers\API\LocationController
 
 Route::prefix('api')->name('api.')->group(function () {
     // AI Chat API
-    //Route::post('/ai/chat', [AiChatController::class, 'chat'])->name('ai.chat');
     Route::post('/ai/chat', [App\Http\Controllers\Api\AiChatController::class, 'chat'])->name('ai.chat');
 
     // Location APIs
     Route::get('/countries', [LocationController::class, 'countries'])->name('countries');
     Route::get('/states/{countryId?}', [LocationController::class, 'states'])->name('states');
     Route::get('/lgas/{stateId?}', [LocationController::class, 'lgas'])->name('lgas');
-    
     Route::post('/detect-location', [LocationController::class, 'detectLocation'])->name('detect-location');
     Route::get('/locations/search', [LocationController::class, 'search'])->name('locations.search');
+
+    // WebRTC Telemedicine Signaling (auth required)
+    Route::middleware('auth')->prefix('telemedicine')->name('telemedicine.signal.')->group(function () {
+        Route::post('/{roomCode}/signal', [App\Http\Controllers\Api\TelemedicineSignalController::class, 'send'])->name('send');
+        Route::get('/{roomCode}/signals', [App\Http\Controllers\Api\TelemedicineSignalController::class, 'poll'])->name('poll');
+    });
 });
 /*
 |--------------------------------------------------------------------------
