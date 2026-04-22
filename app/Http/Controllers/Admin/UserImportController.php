@@ -58,11 +58,15 @@ class UserImportController extends Controller
     ]);
 
     try {
-        // Store file
+        // Store file — ensure destination directory exists
         $file = $request->file('file');
         $originalName = $file->getClientOriginalName();
         $storedName = 'imports/' . time() . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
-        $file->move(storage_path('app/public/' . dirname($storedName)), basename($storedName));
+        $destDir = storage_path('app/public/imports');
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+        $file->move($destDir, basename($storedName));
 
         // Read file headers and sample data
         $filePath = storage_path('app/public/' . $storedName);
@@ -267,23 +271,18 @@ class UserImportController extends Controller
                         'submitted_at' => now(),
                     ]);
                 } elseif ($import->user_type === 'farmer') {
-                    // Import livestock for farmers if provided
-                    if (!empty($data['livestock_type']) && !empty($data['livestock_count'])) {
+                    // Optionally create livestock record if spreadsheet includes livestock columns
+                    if (!empty($data['livestock_type'])) {
                         try {
                             \App\Models\Livestock::create([
-                                'user_id' => $user->id,
-                                'type' => $data['livestock_type'],
-                                'count' => (int)($data['livestock_count'] ?? 0),
-                                'breed' => $data['livestock_breed'] ?? null,
-                                'age_group' => $data['livestock_age_group'] ?? 'adult',
-                                'health_status' => $data['livestock_health_status'] ?? 'healthy',
-                                'vaccination_status' => $data['livestock_vaccination_status'] ?? 'not_vaccinated',
-                                'last_vaccination_date' => !empty($data['last_vaccination_date']) ? date('Y-m-d', strtotime($data['last_vaccination_date'])) : null,
-                                'notes' => $data['livestock_notes'] ?? null,
+                                'user_id'       => $user->id,
+                                'owner_id'      => $user->id,
+                                'livestock_type' => strtolower($data['livestock_type']),
+                                'quantity'      => (int)($data['livestock_count'] ?? 1),
+                                'health_status' => 'healthy',
                             ]);
                         } catch (\Exception $e) {
-                            // Log livestock creation error but don't fail user import
-                            \Log::warning("Failed to create livestock for user {$user->id}: " . $e->getMessage());
+                            \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
                         }
                     }
                 }
@@ -312,12 +311,17 @@ class UserImportController extends Controller
     }
 
     /**
-     * Generate random password
+     * Generate a cryptographically random password.
      */
-    protected function generatePassword($length = 12)
+    protected function generatePassword($length = 12): string
     {
-        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
-        return substr(str_shuffle(str_repeat($chars, ceil($length / strlen($chars)))), 0, $length);
+        $chars    = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$';
+        $charLen  = strlen($chars) - 1;
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $chars[random_int(0, $charLen)];
+        }
+        return $password;
     }
 
     /**

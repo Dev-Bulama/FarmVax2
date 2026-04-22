@@ -237,5 +237,26 @@ class DummyUsersSeeder extends Seeder
                 ]
             );
         }
+
+        // Seed sample livestock for the first farmer so the dashboard is not empty
+        $farmer1 = User::where('email', 'farmer1@farmvax.com')->first();
+        if ($farmer1 && \App\Models\Livestock::where('user_id', $farmer1->id)->count() === 0) {
+            $livestockSeed = [
+                ['livestock_type' => 'cattle',  'quantity' => 15, 'health_status' => 'healthy'],
+                ['livestock_type' => 'goat',    'quantity' => 30, 'health_status' => 'healthy'],
+                ['livestock_type' => 'chicken', 'quantity' => 120, 'health_status' => 'healthy'],
+            ];
+            foreach ($livestockSeed as $ls) {
+                \App\Models\Livestock::create(array_merge($ls, [
+                    'user_id'  => $farmer1->id,
+                    'owner_id' => $farmer1->id,
+                ]));
+            }
+        }
+
+        // Enable AI chatbot in settings (admin can add the API key later)
+        if (class_exists(\App\Models\Setting::class)) {
+            \App\Models\Setting::where('key', 'ai_enabled')->update(['value' => '1']);
+        }
     }
 }

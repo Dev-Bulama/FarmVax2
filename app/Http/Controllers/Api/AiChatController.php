@@ -23,32 +23,26 @@ class AiChatController extends Controller
                 'conversation_history' => 'nullable|array',
             ]);
 
-            // Check if AI is enabled
-            $aiEnabled = Setting::get('ai_enabled', false);
+            // Check if AI is enabled (setting stored as '1'/'0' string)
+            $aiEnabled = filter_var(Setting::get('ai_enabled', '0'), FILTER_VALIDATE_BOOLEAN);
             if (!$aiEnabled) {
-                Log::error('AI is disabled in settings');
                 return response()->json([
-                    'success' => false,
-                    'error' => 'AI chatbot is currently disabled'
-                ], 503);
+                    'success'  => false,
+                    'error'    => 'The AI assistant is currently offline. Please try again later or contact support.',
+                    'disabled' => true,
+                ], 200);
             }
 
-            // Get AI settings
+            // Get AI settings — support both 'ai_api_key' (current) and legacy 'openai_api_key'
             $provider = Setting::get('ai_provider', 'openai');
-            $apiKey = Setting::get('openai_api_key');
-            
-            Log::info('AI Chat Request', [
-                'provider' => $provider,
-                'has_api_key' => !empty($apiKey),
-                'message' => $validated['message']
-            ]);
+            $apiKey   = Setting::get('ai_api_key') ?: Setting::get('openai_api_key');
 
             if (empty($apiKey)) {
-                Log::error('No API key found');
                 return response()->json([
-                    'success' => false,
-                    'error' => 'API key not configured. Please contact administrator.'
-                ], 500);
+                    'success'  => false,
+                    'error'    => 'The AI assistant is not configured yet. Please contact the administrator to set up the API key.',
+                    'disabled' => true,
+                ], 503);
             }
 
             // Check if user is requesting human assistance
@@ -143,7 +137,7 @@ class AiChatController extends Controller
 
     protected function callOpenAI($message, $systemPrompt, $history, $apiKey)
     {
-        $model = Setting::get('openai_model', 'gpt-4o-mini');
+        $model = Setting::get('ai_model') ?: Setting::get('openai_model', 'gpt-4o-mini');
         $temperature = (float) Setting::get('ai_temperature', 0.7);
         $maxTokens = (int) Setting::get('ai_max_tokens', 1000);
 
@@ -259,15 +253,22 @@ class AiChatController extends Controller
     {
         $userId = auth()->id();
 
-        return ChatbotConversation::firstOrCreate(
-            [
-                'user_id' => $userId,
-                'is_active' => true,
-            ],
-            [
+        // Use 'status' column (always present) rather than 'is_active' (may be missing on older installs)
+        $conversation = ChatbotConversation::where('user_id', $userId)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (!$conversation) {
+            $conversation = ChatbotConversation::create([
+                'user_id'    => $userId,
                 'session_id' => session()->getId(),
-            ]
-        );
+                'status'     => 'active',
+                'is_active'  => true,
+            ]);
+        }
+
+        return $conversation;
     }
 
     protected function detectHumanRequest($message)
