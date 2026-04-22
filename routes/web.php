@@ -278,56 +278,7 @@ Route::prefix('api')->name('api.')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth'])->prefix('farmer')->name('farmer.')->group(function () {
-
-    // Dashboard
-    Route::get('/dashboard', [\App\Http\Controllers\Farmer\DashboardController::class, 'index'])->name('dashboard');
-
-    // Help & Support
-    Route::get('/help', function() {
-        return view('farmer.help');
-    })->name('help');
-
-    // Farm Records - 3 Step Form
-    Route::prefix('farm-records')->name('farm-records.')->group(function () {
-        
-        // List all farm records
-        Route::get('/', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'index'])->name('index');
-        
-        // View single farm record
-        Route::get('/{id}', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'show'])->name('show');
-        
-        // Step 1 - Basic Information
-        Route::get('/create/step1', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'step1'])->name('step1');
-        Route::post('/create/step1', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'postStep1'])->name('step1.post');
-        
-        // Step 2 - Livestock Information
-        Route::get('/create/step2', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'step2'])->name('step2');
-        Route::post('/create/step2', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'postStep2'])->name('step2.post');
-        
-        // Step 3 - Health & Vaccination
-        Route::get('/create/step3', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'step3'])->name('step3');
-        Route::post('/create/step3', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'postStep3'])->name('step3.post');
-        
-        // Navigate back
-        Route::get('/back/{step}', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'previousStep'])->name('back');
-        
-    });
-    
-    // Livestock Management
-    Route::resource('livestock', \App\Http\Controllers\Farmer\LivestockController::class);
-    
-    // Service Requests
-    Route::resource('service-requests', \App\Http\Controllers\Farmer\ServiceRequestController::class);
-    
-    // Vaccinations
-    Route::resource('vaccinations', \App\Http\Controllers\Farmer\VaccinationController::class);
-    
-    // Profile
-    Route::get('/profile', [\App\Http\Controllers\Farmer\ProfileController::class, 'index'])->name('profile');
-    Route::put('/profile', [\App\Http\Controllers\Farmer\ProfileController::class, 'update'])->name('profile.update');
-
-});
+// (First auth-only farmer group removed — now consolidated into the role:farmer group below)
 
 /*
 |--------------------------------------------------------------------------
@@ -602,7 +553,22 @@ Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroy
         Route::post('/approvals/{id}/reject', [App\Http\Controllers\Admin\ProfessionalApprovalController::class, 'reject'])->name('approvals.reject');
         Route::post('/approvals/bulk-approve', [App\Http\Controllers\Admin\ProfessionalApprovalController::class, 'bulkApprove'])->name('approvals.bulk-approve');
     });
-    
+
+    // Telemedicine Management
+    Route::prefix('telemedicine')->name('telemedicine.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\TelemedicineController::class, 'index'])->name('index');
+        Route::get('/{id}', [App\Http\Controllers\Admin\TelemedicineController::class, 'show'])->name('show');
+        Route::post('/{id}/assign', [App\Http\Controllers\Admin\TelemedicineController::class, 'assign'])->name('assign');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\TelemedicineController::class, 'cancel'])->name('cancel');
+        Route::patch('/{id}/notes', [App\Http\Controllers\Admin\TelemedicineController::class, 'updateNotes'])->name('notes');
+    });
+
+    // AI Disease Detection Monitor
+    Route::prefix('disease-detection')->name('disease-detection.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\DiseaseDetectionController::class, 'index'])->name('index');
+        Route::get('/{id}', [App\Http\Controllers\Admin\DiseaseDetectionController::class, 'show'])->name('show');
+    });
+
 });
 
 
@@ -614,9 +580,13 @@ Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroy
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:farmer'])->prefix('farmer')->name('farmer.')->group(function () {
-    
+
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Farmer\DashboardController::class, 'index'])->name('dashboard');
+
+    // Help
+    Route::get('/help', function() { return view('farmer.help'); })->name('help');
+
     // Herd Groups - CRUD
     Route::get('/herd-groups', [\App\Http\Controllers\Farmer\HerdGroupController::class, 'index'])->name('herd-groups.index');
     Route::get('/herd-groups/create', [\App\Http\Controllers\Farmer\HerdGroupController::class, 'create'])->name('herd-groups.create');
@@ -643,16 +613,40 @@ Route::middleware(['auth', 'role:farmer'])->prefix('farmer')->name('farmer.')->g
     Route::get('/farm-records/{id}', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'show'])->name('farm-records.show');
     
     // Livestock
-Route::resource('livestock', \App\Http\Controllers\Individual\LivestockController::class);    
+    Route::resource('livestock', \App\Http\Controllers\Individual\LivestockController::class);
+
+    // Farm Records - 3 Step Form
+    Route::prefix('farm-records')->name('farm-records.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'show'])->name('show');
+        Route::get('/create/step1', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'step1'])->name('step1');
+        Route::post('/create/step1', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'postStep1'])->name('step1.post');
+        Route::get('/create/step2', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'step2'])->name('step2');
+        Route::post('/create/step2', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'postStep2'])->name('step2.post');
+        Route::get('/create/step3', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'step3'])->name('step3');
+        Route::post('/create/step3', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'postStep3'])->name('step3.post');
+        Route::get('/back/{step}', [\App\Http\Controllers\Farmer\FarmRecordController::class, 'previousStep'])->name('back');
+    });
+
     // Service Requests
     Route::resource('service-requests', \App\Http\Controllers\Farmer\ServiceRequestController::class);
-    
+
     // Vaccinations
     Route::resource('vaccinations', \App\Http\Controllers\Farmer\VaccinationController::class);
-    
+
     // Profile
     Route::get('/profile', [\App\Http\Controllers\Farmer\ProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [\App\Http\Controllers\Farmer\ProfileController::class, 'update'])->name('profile.update');
+
+    // Telemedicine (Video Consultations)
+    Route::prefix('telemedicine')->name('telemedicine.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Farmer\TelemedicineController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Farmer\TelemedicineController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Farmer\TelemedicineController::class, 'store'])->name('store');
+        Route::get('/{id}', [\App\Http\Controllers\Farmer\TelemedicineController::class, 'show'])->name('show');
+        Route::post('/{id}/cancel', [\App\Http\Controllers\Farmer\TelemedicineController::class, 'cancel'])->name('cancel');
+        Route::get('/{id}/join', [\App\Http\Controllers\Farmer\TelemedicineController::class, 'join'])->name('join');
+    });
 });
 
 // /*
@@ -827,9 +821,18 @@ Route::put('/profile', [\App\Http\Controllers\Professional\ProfileController::cl
         return app(\App\Http\Controllers\Professional\ServiceRequestController::class)->cancel($request, $id);
     })->name('service-requests.cancel');
     Route::get('/farm-records/{id}', function($id) {
-    $record = \App\Models\FarmRecord::with('user')->findOrFail($id);
-    return view('professional.farm-records.show', compact('record'));
-})->name('farm-records.show');
+        $record = \App\Models\FarmRecord::with('user')->findOrFail($id);
+        return view('professional.farm-records.show', compact('record'));
+    })->name('farm-records.show');
+
+    // Telemedicine
+    Route::prefix('telemedicine')->name('telemedicine.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Professional\TelemedicineController::class, 'index'])->name('index');
+        Route::post('/{id}/accept', [\App\Http\Controllers\Professional\TelemedicineController::class, 'accept'])->name('accept');
+        Route::get('/{id}/join', [\App\Http\Controllers\Professional\TelemedicineController::class, 'join'])->name('join');
+        Route::post('/{id}/complete', [\App\Http\Controllers\Professional\TelemedicineController::class, 'complete'])->name('complete');
+        Route::get('/{id}', [\App\Http\Controllers\Professional\TelemedicineController::class, 'show'])->name('show');
+    });
 });
 /*
 |--------------------------------------------------------------------------
@@ -860,6 +863,19 @@ Route::middleware(['auth', 'role:volunteer'])->prefix('volunteer')->name('volunt
 //     // Activity
 //     Route::get('/activity', [VolunteerDashboardController::class, 'activity'])->name('activity');
 // });
+
+/*
+|--------------------------------------------------------------------------
+| AI Disease Detection (all authenticated users)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('disease-detection')->name('disease-detection.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\DiseaseDetectionController::class, 'index'])->name('index');
+    Route::get('/create', [\App\Http\Controllers\DiseaseDetectionController::class, 'create'])->name('create');
+    Route::post('/', [\App\Http\Controllers\DiseaseDetectionController::class, 'store'])->name('store');
+    Route::get('/{id}', [\App\Http\Controllers\DiseaseDetectionController::class, 'show'])->name('show');
+    Route::delete('/{id}', [\App\Http\Controllers\DiseaseDetectionController::class, 'destroy'])->name('destroy');
+});
 
 /*
 |--------------------------------------------------------------------------

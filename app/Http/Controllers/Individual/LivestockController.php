@@ -9,191 +9,175 @@ use Illuminate\Support\Facades\Auth;
 
 class LivestockController extends Controller
 {
-    /**
-     * Display a listing of livestock
-     */
     public function index()
     {
         $user = Auth::user();
-        
+
         $livestock = Livestock::where('user_id', $user->id)
             ->with(['herdGroup', 'vaccinationHistory'])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
-        
+
         $stats = [
-            'total' => Livestock::where('user_id', $user->id)->count(),
-            'healthy' => Livestock::where('user_id', $user->id)->where('health_status', 'healthy')->count(),
-            'sick' => Livestock::where('user_id', $user->id)->whereIn('health_status', ['sick', 'under_treatment'])->count(),
-            'vaccinated' => Livestock::where('user_id', $user->id)->where('is_vaccinated', true)->count(),
+            'total'     => Livestock::where('user_id', $user->id)->sum('quantity'),
+            'healthy'   => Livestock::where('user_id', $user->id)->where('health_status', 'healthy')->sum('quantity'),
+            'sick'      => Livestock::where('user_id', $user->id)->whereIn('health_status', ['sick', 'under_treatment'])->sum('quantity'),
+            'vaccinated'=> Livestock::where('user_id', $user->id)->where('is_vaccinated', true)->sum('quantity'),
         ];
-        
-        return view('individual.livestock.index', compact('livestock', 'stats'));
+
+        return view('farmer.livestock.index', compact('livestock', 'stats'));
     }
 
-    /**
-     * Show the form for creating new livestock
-     */
     public function create()
     {
         $herdGroups = \App\Models\HerdGroup::where('user_id', Auth::id())
             ->where('is_active', true)
             ->get();
-        
-        return view('individual.livestock.create', compact('herdGroups'));
+
+        return view('farmer.livestock.create', compact('herdGroups'));
     }
 
-    /**
-     * Store a newly created livestock
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'livestock_type' => 'required|in:cattle,goat,sheep,pig,chicken,duck,turkey,rabbit,horse,donkey,other',
-            'breed' => 'nullable|string|max:255',
-            'tag_number' => 'nullable|string|max:255|unique:livestock,tag_number',
-            'name' => 'nullable|string|max:255',
-            'gender' => 'required|in:male,female,unknown',
-            'date_of_birth' => 'nullable|date',
-            'age_years' => 'nullable|integer|min:0',
-            'age_months' => 'nullable|integer|min:0|max:11',
-            'health_status' => 'required|in:healthy,sick,recovering,deceased',
-            'weight_kg' => 'nullable|numeric|min:0',
+            'breed'          => 'nullable|string|max:255',
+            'tag_number'     => 'nullable|string|max:255',
+            'name'           => 'nullable|string|max:255',
+            'gender'         => 'required|in:male,female,unknown',
+            'date_of_birth'  => 'nullable|date',
+            'age_years'      => 'nullable|integer|min:0',
+            'age_months'     => 'nullable|integer|min:0|max:11',
+            'health_status'  => 'required|in:healthy,sick,recovering,deceased',
+            'weight_kg'      => 'nullable|numeric|min:0',
             'color_markings' => 'nullable|string',
-            'herd_group_id' => 'nullable|exists:herd_groups,id',
-            'is_vaccinated' => 'nullable|boolean',
-            'notes' => 'nullable|string',
+            'herd_group_id'  => 'nullable|exists:herd_groups,id',
+            'is_vaccinated'  => 'nullable|boolean',
+            'notes'          => 'nullable|string',
+            'quantity'       => 'nullable|integer|min:1',
         ]);
 
-        $validated['user_id'] = Auth::id();
+        $data = [
+            'user_id'        => Auth::id(),
+            'owner_id'       => Auth::id(),
+            'livestock_type' => $validated['livestock_type'],
+            'type'           => $validated['livestock_type'],
+            'breed'          => $validated['breed'] ?? null,
+            'tag_number'     => $validated['tag_number'] ?? null,
+            'name'           => $validated['name'] ?? null,
+            'gender'         => $validated['gender'],
+            'date_of_birth'  => $validated['date_of_birth'] ?? null,
+            'age_years'      => $validated['age_years'] ?? null,
+            'age_months'     => $validated['age_months'] ?? null,
+            'health_status'  => $validated['health_status'],
+            'weight'         => $validated['weight_kg'] ?? null,
+            'weight_unit'    => 'kg',
+            'color'          => $validated['color_markings'] ?? null,
+            'herd_group_id'  => $validated['herd_group_id'] ?? null,
+            'is_vaccinated'  => $validated['is_vaccinated'] ?? false,
+            'notes'          => $validated['notes'] ?? null,
+            'quantity'       => $validated['quantity'] ?? 1,
+            'status'         => 'active',
+        ];
 
-        // Map form field names to database column names
-        if (isset($validated['weight_kg'])) {
-            $validated['weight'] = $validated['weight_kg'];
-            unset($validated['weight_kg']);
-        }
-        if (isset($validated['color_markings'])) {
-            $validated['color'] = $validated['color_markings'];
-            unset($validated['color_markings']);
-        }
+        $livestock = Livestock::create($data);
 
-        // Set type = livestock_type to satisfy production DB column requirement
-        $validated['type'] = $validated['livestock_type'];
-
-        $livestock = Livestock::create($validated);
-
-        // Update herd group statistics if assigned
         if ($livestock->herd_group_id) {
             $livestock->herdGroup->updateStatistics();
         }
 
-        return redirect()->route('individual.livestock.show', $livestock->id)
+        return redirect()->route('farmer.livestock.index')
             ->with('success', 'Livestock added successfully!');
     }
 
-    /**
-     * Display the specified livestock
-     */
     public function show($id)
     {
         $livestock = Livestock::where('user_id', Auth::id())
             ->with(['herdGroup', 'vaccinationHistory'])
             ->findOrFail($id);
-        
-        return view('individual.livestock.show', compact('livestock'));
+
+        return view('farmer.livestock.show', compact('livestock'));
     }
 
-    /**
-     * Show the form for editing livestock
-     */
     public function edit($id)
     {
         $livestock = Livestock::where('user_id', Auth::id())->findOrFail($id);
-        
+
         $herdGroups = \App\Models\HerdGroup::where('user_id', Auth::id())
             ->where('is_active', true)
             ->get();
-        
-        return view('individual.livestock.edit', compact('livestock', 'herdGroups'));
+
+        return view('farmer.livestock.edit', compact('livestock', 'herdGroups'));
     }
 
-    /**
-     * Update the specified livestock
-     */
     public function update(Request $request, $id)
     {
         $livestock = Livestock::where('user_id', Auth::id())->findOrFail($id);
 
         $validated = $request->validate([
             'livestock_type' => 'required|in:cattle,goat,sheep,pig,chicken,duck,turkey,rabbit,horse,donkey,other',
-            'breed' => 'nullable|string|max:255',
-            'tag_number' => 'nullable|string|max:255|unique:livestock,tag_number,' . $livestock->id,
-            'name' => 'nullable|string|max:255',
-            'gender' => 'required|in:male,female,unknown',
-            'date_of_birth' => 'nullable|date',
-            'age_years' => 'nullable|integer|min:0',
-            'age_months' => 'nullable|integer|min:0|max:11',
-            'health_status' => 'required|in:healthy,sick,recovering,deceased',
-            'weight_kg' => 'nullable|numeric|min:0',
+            'breed'          => 'nullable|string|max:255',
+            'tag_number'     => 'nullable|string|max:255',
+            'name'           => 'nullable|string|max:255',
+            'gender'         => 'required|in:male,female,unknown',
+            'date_of_birth'  => 'nullable|date',
+            'age_years'      => 'nullable|integer|min:0',
+            'age_months'     => 'nullable|integer|min:0|max:11',
+            'health_status'  => 'required|in:healthy,sick,recovering,deceased',
+            'weight_kg'      => 'nullable|numeric|min:0',
             'color_markings' => 'nullable|string',
-            'herd_group_id' => 'nullable|exists:herd_groups,id',
-            'is_vaccinated' => 'nullable|boolean',
-            'notes' => 'nullable|string',
+            'herd_group_id'  => 'nullable|exists:herd_groups,id',
+            'is_vaccinated'  => 'nullable|boolean',
+            'notes'          => 'nullable|string',
+            'quantity'       => 'nullable|integer|min:1',
         ]);
 
-        // Map form field names to database column names
-        if (isset($validated['weight_kg'])) {
-            $validated['weight'] = $validated['weight_kg'];
-            unset($validated['weight_kg']);
-        }
-        if (isset($validated['color_markings'])) {
-            $validated['color'] = $validated['color_markings'];
-            unset($validated['color_markings']);
-        }
-
-        // Keep type in sync with livestock_type
-        $validated['type'] = $validated['livestock_type'];
-
         $oldHerdGroupId = $livestock->herd_group_id;
-        $livestock->update($validated);
 
-        // Update old herd statistics
+        $livestock->update([
+            'livestock_type' => $validated['livestock_type'],
+            'type'           => $validated['livestock_type'],
+            'breed'          => $validated['breed'] ?? null,
+            'tag_number'     => $validated['tag_number'] ?? null,
+            'name'           => $validated['name'] ?? null,
+            'gender'         => $validated['gender'],
+            'date_of_birth'  => $validated['date_of_birth'] ?? null,
+            'age_years'      => $validated['age_years'] ?? null,
+            'age_months'     => $validated['age_months'] ?? null,
+            'health_status'  => $validated['health_status'],
+            'weight'         => $validated['weight_kg'] ?? null,
+            'color'          => $validated['color_markings'] ?? null,
+            'herd_group_id'  => $validated['herd_group_id'] ?? null,
+            'is_vaccinated'  => $validated['is_vaccinated'] ?? false,
+            'notes'          => $validated['notes'] ?? null,
+            'quantity'       => $validated['quantity'] ?? $livestock->quantity,
+        ]);
+
         if ($oldHerdGroupId && $oldHerdGroupId != $livestock->herd_group_id) {
-            $oldHerdGroup = \App\Models\HerdGroup::find($oldHerdGroupId);
-            if ($oldHerdGroup) {
-                $oldHerdGroup->updateStatistics();
-            }
+            $old = \App\Models\HerdGroup::find($oldHerdGroupId);
+            if ($old) $old->updateStatistics();
         }
-
-        // Update new herd statistics
         if ($livestock->herd_group_id) {
             $livestock->herdGroup->updateStatistics();
         }
 
-        return redirect()->route('individual.livestock.show', $livestock->id)
+        return redirect()->route('farmer.livestock.index')
             ->with('success', 'Livestock updated successfully!');
     }
 
-    /**
-     * Remove the specified livestock
-     */
     public function destroy($id)
     {
         $livestock = Livestock::where('user_id', Auth::id())->findOrFail($id);
-        
+
         $herdGroupId = $livestock->herd_group_id;
-        
         $livestock->delete();
 
-        // Update herd statistics if was in a herd
         if ($herdGroupId) {
             $herdGroup = \App\Models\HerdGroup::find($herdGroupId);
-            if ($herdGroup) {
-                $herdGroup->updateStatistics();
-            }
+            if ($herdGroup) $herdGroup->updateStatistics();
         }
 
-        return redirect()->route('individual.livestock.index')
+        return redirect()->route('farmer.livestock.index')
             ->with('success', 'Livestock deleted successfully!');
     }
 }

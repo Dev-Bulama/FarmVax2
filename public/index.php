@@ -10,9 +10,6 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
     require $maintenance;
 }
 
-// Load PhpSpreadsheet manual autoloader FIRST
-require __DIR__.'/../vendor/phpspreadsheet-autoload.php';
-
 // Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
 
