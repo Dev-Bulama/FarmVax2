@@ -59,13 +59,13 @@
         </div>
 
         <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            <a href="{{ route('individual.dashboard') }}" class="flex items-center px-3 py-3 text-sm font-medium text-white/90 hover:bg-white/10 rounded-lg transition">
+            <a href="{{ route('farmer.dashboard') }}" class="flex items-center px-3 py-3 text-sm font-medium text-white/90 hover:bg-white/10 rounded-lg transition">
                 <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 Dashboard
             </a>
-            <a href="{{ route('individual.livestock.index') }}" class="flex items-center px-3 py-3 text-sm font-semibold text-white bg-white/20 rounded-lg border-l-4 border-white">
+            <a href="{{ route('farmer.livestock.index') }}" class="flex items-center px-3 py-3 text-sm font-semibold text-white bg-white/20 rounded-lg border-l-4 border-white">
                 <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
@@ -127,7 +127,7 @@
                             <p class="text-sm text-gray-600 hidden sm:block">Manage your animals and track their health</p>
                         </div>
                     </div>
-                    <a href="{{ route('individual.livestock.create') }}" class="hidden sm:flex items-center px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition">
+                    <a href="{{ route('farmer.livestock.create') }}" class="hidden sm:flex items-center px-4 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition">
                         <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
@@ -174,7 +174,7 @@
 
             <!-- Mobile Add Button -->
             <div class="sm:hidden mb-6">
-                <a href="{{ route('individual.livestock.create') }}" class="flex items-center justify-center w-full px-4 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition">
+                <a href="{{ route('farmer.livestock.create') }}" class="flex items-center justify-center w-full px-4 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition">
                     <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -227,7 +227,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <a href="{{ route('individual.livestock.show', $animal->id) }}" class="text-primary font-semibold hover:text-primary/80">View →</a>
+                                        <a href="{{ route('farmer.livestock.show', $animal->id) }}" class="text-primary font-semibold hover:text-primary/80">View →</a>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -257,7 +257,7 @@
                                     {{ ucfirst($status) }}
                                 </span>
                             </div>
-                            <a href="{{ route('individual.livestock.show', $animal->id) }}" class="block w-full text-center py-2 bg-white text-primary font-bold rounded-lg border-2 border-primary/20 hover:bg-primary hover:text-white transition">
+                            <a href="{{ route('farmer.livestock.show', $animal->id) }}" class="block w-full text-center py-2 bg-white text-primary font-bold rounded-lg border-2 border-primary/20 hover:bg-primary hover:text-white transition">
                                 View Details
                             </a>
                         </div>
@@ -279,7 +279,7 @@
                         <h3 class="mt-2 text-sm font-bold text-gray-900">No livestock registered</h3>
                         <p class="mt-1 text-sm text-gray-500">Get started by adding your first animal.</p>
                         <div class="mt-6">
-                            <a href="{{ route('individual.livestock.create') }}" class="inline-flex items-center px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition">
+                            <a href="{{ route('farmer.livestock.create') }}" class="inline-flex items-center px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition">
                                 <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>

@@ -174,17 +174,28 @@ class UserImportController extends Controller
      */
     protected function processImportFile(UserImport $import, array $mapping)
     {
+        // Prevent PHP timeout on shared hosting for large files
+        @set_time_limit(0);
+        @ini_set('memory_limit', '512M');
+        ignore_user_abort(true);
+
         $filePath = storage_path('app/public/' . $import->stored_filename);
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getActiveSheet();
-        
+
         $highestRow = $sheet->getHighestRow();
         
         // Get Nigeria as default country
         $defaultCountry = Country::where('code', 'NG')->first();
 
-       for ($row = 2; $row <= $highestRow; $row++) {
-    try {
+        $batchSize = 50; // commit every 50 rows so we don't hold one giant transaction
+
+        for ($row = 2; $row <= $highestRow; $row++) {
+            // Periodically save progress so admin can see real-time status
+            if ($row % $batchSize === 0) {
+                $import->save();
+            }
+        try {
         // Extract data based on mapping
         $data = [];
         
