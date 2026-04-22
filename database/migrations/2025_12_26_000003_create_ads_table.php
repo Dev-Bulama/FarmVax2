@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('ads')) { return; }
         Schema::create('ads', function (Blueprint $table) {
             $table->id();
             $table->string('title');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('ad_views')) { return; }
         Schema::create('ad_views', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ad_id')->constrained('ads')->onDelete('cascade');

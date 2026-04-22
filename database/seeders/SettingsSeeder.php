@@ -68,7 +68,11 @@ class SettingsSeeder extends Seeder
         ];
 
         foreach ($settings as $setting) {
-            Setting::create($setting);
+            // Skip if the key already exists; update only if it was absent
+            Setting::firstOrCreate(
+                ['key' => $setting['key']],
+                $setting
+            );
         }
     }
 }

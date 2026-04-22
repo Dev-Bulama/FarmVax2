@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('user_imports')) { return; }
         Schema::create('user_imports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('imported_by')->constrained('users')->onDelete('cascade');
@@ -36,6 +37,7 @@ return new class extends Migration
         });
         
         // Create table for tracking individual imported users and their email status
+        if (Schema::hasTable('imported_users')) { return; }
         Schema::create('imported_users', function (Blueprint $table) {
             $table->id();
             $table->foreignId('import_id')->constrained('user_imports')->onDelete('cascade');

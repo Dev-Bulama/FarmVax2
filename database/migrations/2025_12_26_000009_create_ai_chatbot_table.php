@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('chatbot_conversations')) { return; }
         Schema::create('chatbot_conversations', function (Blueprint $table) {
             $table->id();
             $table->string('session_id')->unique();
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('chatbot_messages')) { return; }
         Schema::create('chatbot_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('conversation_id')->constrained('chatbot_conversations')->onDelete('cascade');
@@ -28,6 +30,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('chatbot_training_data')) { return; }
         Schema::create('chatbot_training_data', function (Blueprint $table) {
             $table->id();
             $table->text('question');

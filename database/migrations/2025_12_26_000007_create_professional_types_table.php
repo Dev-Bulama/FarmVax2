@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('professional_types')) { return; }
         Schema::create('professional_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -16,6 +17,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('specializations')) { return; }
         Schema::create('specializations', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -24,6 +26,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('service_areas')) { return; }
         Schema::create('service_areas', function (Blueprint $table) {
             $table->id();
             $table->string('name');

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('alert_preferences')) { return; }
         Schema::create('alert_preferences', function (Blueprint $table) {
             $table->id();
             

@@ -72,7 +72,7 @@ class SiteContentSeeder extends Seeder
         ];
 
         foreach ($contents as $content) {
-            SiteContent::create($content);
+            SiteContent::firstOrCreate(['section' => $content['section']], $content);
         }
     }
 }

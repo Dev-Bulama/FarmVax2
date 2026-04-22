@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('bulk_messages')) { return; }
         Schema::create('bulk_messages', function (Blueprint $table) {
             $table->id();
             $table->string('title');
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('bulk_message_logs')) { return; }
         Schema::create('bulk_message_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bulk_message_id')->constrained('bulk_messages')->onDelete('cascade');
