@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('verification_documents')) { return; }
         Schema::create('verification_documents', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');

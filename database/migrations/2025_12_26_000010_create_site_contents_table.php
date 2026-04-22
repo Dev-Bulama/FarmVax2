@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('site_contents')) { return; }
         Schema::create('site_contents', function (Blueprint $table) {
             $table->id();
             $table->string('section')->unique(); // hero, features, about, etc.

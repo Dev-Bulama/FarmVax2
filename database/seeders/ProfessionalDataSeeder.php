@@ -22,7 +22,7 @@ class ProfessionalDataSeeder extends Seeder
         ];
 
         foreach ($professionalTypes as $type) {
-            ProfessionalType::create($type);
+            ProfessionalType::firstOrCreate(['name' => $type['name']], $type);
         }
 
         // Specializations
@@ -40,7 +40,7 @@ class ProfessionalDataSeeder extends Seeder
         ];
 
         foreach ($specializations as $spec) {
-            Specialization::create($spec);
+            Specialization::firstOrCreate(['name' => $spec['name']], $spec);
         }
 
         // Service Areas
@@ -56,7 +56,7 @@ class ProfessionalDataSeeder extends Seeder
         ];
 
         foreach ($serviceAreas as $area) {
-            ServiceArea::create($area);
+            ServiceArea::firstOrCreate(['name' => $area['name']], $area);
         }
     }
 }

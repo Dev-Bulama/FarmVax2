@@ -34,6 +34,7 @@ return new class extends Migration
         });
 
         // Create chat_participants table for better participant management
+        if (Schema::hasTable('chat_participants')) { return; }
         Schema::create('chat_participants', function (Blueprint $table) {
             $table->id();
             $table->foreignId('conversation_id')->constrained('chat_conversations')->onDelete('cascade');
@@ -50,6 +51,7 @@ return new class extends Migration
         });
 
         // Create message reactions table
+        if (Schema::hasTable('chat_message_reactions')) { return; }
         Schema::create('chat_message_reactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('message_id')->constrained('chat_messages')->onDelete('cascade');

@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('rewards')) { return; }
         Schema::create('rewards', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('volunteer_stats')) { return; }
         Schema::create('volunteer_stats', function (Blueprint $table) {
             $table->id();
             $table->foreignId('volunteer_id')->constrained('volunteers')->onDelete('cascade');

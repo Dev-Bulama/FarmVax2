@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('telemedicine_requests')) { return; }
         Schema::create('telemedicine_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('requester_id');  // farmer or any user

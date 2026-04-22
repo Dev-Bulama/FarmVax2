@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('system_versions')) { return; }
         Schema::create('system_versions', function (Blueprint $table) {
             $table->id();
             $table->string('version', 20); // e.g., "2.0.1"

@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('outbreak_alerts')) { return; }
         Schema::create('outbreak_alerts', function (Blueprint $table) {
             $table->id();
             $table->string('disease_name');
@@ -30,6 +31,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        if (Schema::hasTable('outbreak_alert_notifications')) { return; }
         Schema::create('outbreak_alert_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('outbreak_alert_id')->constrained('outbreak_alerts')->onDelete('cascade');
