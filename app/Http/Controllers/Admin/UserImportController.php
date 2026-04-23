@@ -12,6 +12,7 @@ use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -180,6 +181,11 @@ class UserImportController extends Controller
         ignore_user_abort(true);
 
         $mapping        = $import->column_mapping;
+
+        // Cache schema checks once per chunk rather than per row
+        $hasFarmName      = Schema::hasColumn('users', 'farm_name');
+        $hasIsActive      = Schema::hasColumn('users', 'is_active');
+        $hasAccountStatus = Schema::hasColumn('users', 'account_status');
         $filePath       = storage_path('app/public/' . $import->stored_filename);
         $defaultCountry = Country::findByCode('NG');
 
@@ -226,7 +232,7 @@ class UserImportController extends Controller
 
                 DB::beginTransaction();
 
-                $user = User::create([
+                $userPayload = [
                     'name'           => $data['name'],
                     'email'          => $data['email'],
                     'phone'          => $data['phone'] ?? null,
@@ -234,11 +240,15 @@ class UserImportController extends Controller
                     'role'           => $import->user_type,
                     'country_id'     => $defaultCountry ? $defaultCountry->id : null,
                     'address'        => $data['address'] ?? null,
-                    'farm_name'      => $data['farm_name'] ?? null,
-                    'is_active'      => true,
                     'status'         => 'active',
-                    'account_status' => 'active',
-                ]);
+                ];
+
+                // Only include optional columns that exist in the table
+                if ($hasFarmName)      { $userPayload['farm_name']      = $data['farm_name'] ?? null; }
+                if ($hasIsActive)      { $userPayload['is_active']      = true; }
+                if ($hasAccountStatus) { $userPayload['account_status'] = 'active'; }
+
+                $user = User::create($userPayload);
 
                 if ($import->user_type === 'volunteer') {
                     Volunteer::create([
