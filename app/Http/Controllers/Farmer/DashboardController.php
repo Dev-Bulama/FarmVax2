@@ -118,53 +118,34 @@ $overdueVaccinations = VaccinationHistory::whereHas('livestock', function($query
             ->get();
 
         // ========== BULK MESSAGES (TARGETED) ==========
+        // bulk_messages has target_roles (JSON array) and target_locations (JSON).
+        // Show message if no roles are targeted (broadcast) or 'farmer' is in target_roles.
         $recentMessages = BulkMessage::where('status', 'sent')
-            ->where(function($query) use ($user) {
-                // All users
-                $query->where('target_audience', 'all')
-                    // Role-based (farmers)
-                    ->orWhere(function($q) {
-                        $q->where('target_audience', 'role')
-                          ->where(function($sq) {
-                              $sq->whereJsonContains('recipient_data->target_roles', 'farmer')
-                                 ->orWhereJsonContains('target_roles->target_roles', 'farmer');
-                          });
-                    })
-                    // Location-based
-                    ->orWhere(function($q) use ($user) {
-                        $q->where('target_audience', 'location')
-                          ->where(function($sq) use ($user) {
-                              $sq->where('country_id', $user->country_id)
-                                 ->orWhere('state_id', $user->state_id)
-                                 ->orWhere('lga_id', $user->lga_id);
-                          });
-                    });
+            ->where(function($query) {
+                $query->whereNull('target_roles')
+                      ->orWhereJsonContains('target_roles', 'farmer');
             })
             ->orderBy('created_at', 'desc')
             ->limit(3)
             ->get();
 
         // ========== ACTIVE ADS (TARGETED) ==========
-        $activeAds = Ad::where('is_active', 1)
+        // ads table uses status enum (not is_active), target_type (not target_audience),
+        // and target_roles as a flat JSON array (not nested).
+        $activeAds = Ad::where('status', 'active')
             ->where('start_date', '<=', Carbon::now())
             ->where(function($query) {
                 $query->whereNull('end_date')
                       ->orWhere('end_date', '>=', Carbon::now());
             })
             ->where(function($query) use ($user) {
-                // All users
-                $query->where('target_audience', 'all')
-                    // Role-based (farmers)
+                $query->where('target_type', 'all')
                     ->orWhere(function($q) {
-                        $q->where('target_audience', 'role')
-                          ->where(function($sq) {
-                              $sq->whereJsonContains('target_roles->target_roles', 'farmer')
-                                 ->orWhereJsonContains('target_roles->target_roles', 'individual');
-                          });
+                        $q->where('target_type', 'role')
+                          ->whereJsonContains('target_roles', 'farmer');
                     })
-                    // Location-based
                     ->orWhere(function($q) use ($user) {
-                        $q->where('target_audience', 'location')
+                        $q->where('target_type', 'location')
                           ->where(function($sq) use ($user) {
                               $sq->where('country_id', $user->country_id)
                                  ->orWhere('state_id', $user->state_id)
