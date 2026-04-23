@@ -30,9 +30,9 @@ class TelemedicineController extends Controller
     {
         $after = (int) $request->input('after', 0);
 
+        // Catch both 'assigned' (waiting) and 'in_progress' (farmer already joined)
         $calls = TelemedicineRequest::where('professional_id', Auth::id())
-            ->where('status', 'assigned')
-            ->whereNull('started_at')
+            ->whereIn('status', ['assigned', 'in_progress'])
             ->where('id', '>', $after)
             ->with('requester')
             ->get();
