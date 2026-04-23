@@ -190,7 +190,7 @@ class UserImportController extends Controller
         $highestRow = $sheet->getHighestRow();
         
         // Get Nigeria as default country
-        $defaultCountry = Country::where('code', 'NG')->first();
+        $defaultCountry = Country::findByCode('NG');
 
         $batchSize = 50; // commit every 50 rows so we don't hold one giant transaction
 
