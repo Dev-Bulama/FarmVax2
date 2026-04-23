@@ -13,74 +13,10 @@
 
     @php
         $user = auth()->user();
-          // ✅ ADD THIS: Initialize Ad Service
         $adService = new \App\Services\AdService();
-        $bannerAds = $adService->getBannerAds($user);
+        $bannerAds  = $adService->getBannerAds($user);
         $sidebarAds = $adService->getSidebarAds($user);
-        $inlineAds = $adService->getInlineAds($user);
-        // Livestock Stats
-        $totalLivestock = \App\Models\Livestock::where('user_id', $user->id)->count();
-        $healthyLivestock = \App\Models\Livestock::where('user_id', $user->id)->where('health_status', 'healthy')->count();
-        $sickLivestock = \App\Models\Livestock::where('user_id', $user->id)->whereIn('health_status', ['sick', 'under_treatment'])->count();
-        $healthScore = $totalLivestock > 0 ? round(($healthyLivestock / $totalLivestock) * 100) : 0;
-        
-        // Vaccination Stats
-        $upcomingVaccinations = \App\Models\VaccinationHistory::whereHas('livestock', function($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })->where('next_booster_due_date', '>=', now())->where('next_booster_due_date', '<=', now()->addDays(30))->count();
-        
-        $overdueVaccinations = \App\Models\VaccinationHistory::whereHas('livestock', function($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })->where('next_booster_due_date', '<', now())->count();
-        
-        // Service Requests Stats
-        $activeServiceRequests = \App\Models\ServiceRequest::where('user_id', $user->id)->whereIn('status', ['pending', 'in_progress'])->count();
-        $completedServiceRequests = \App\Models\ServiceRequest::where('user_id', $user->id)->where('status', 'completed')->count();
-        
-        // Outbreak Alerts
-        $outbreakAlerts = \App\Models\OutbreakAlert::where("is_active", 1)->orderBy("created_at", "desc")->limit(5)->get();
-        
-        // Recent Messages
-        $recentMessages = \App\Models\BulkMessage::where('status', 'sent')
-            ->where(function($query) use ($user) {
-                $query->where('target_audience', 'all')
-                    ->orWhere(function($q) {
-                        $q->where('target_audience', 'role')
-                          ->where(function($sq) {
-                              $sq->whereJsonContains('target_roles->target_roles', 'farmer')
-                                 ->orWhereJsonContains('target_roles->target_roles', 'individual');
-                          });
-                    });
-            })
-            ->orderBy('created_at', 'desc')
-            ->limit(3)
-            ->get();
-        
-        // Active Ads
-        $activeAds = \App\Models\Ad::where('is_active', 1)
-            ->where('start_date', '<=', now())
-            ->where(function($query) {
-                $query->whereNull('end_date')->orWhere('end_date', '>=', now());
-            })
-            ->where(function($query) use ($user) {
-                $query->where('target_audience', 'all')
-                    ->orWhere(function($q) {
-                        $q->where('target_audience', 'role')
-                          ->where(function($sq) {
-                              $sq->whereJsonContains('target_roles->target_roles', 'farmer')
-                                 ->orWhereJsonContains('target_roles->target_roles', 'individual');
-                          });
-                    });
-            })
-            ->orderBy('priority', 'desc')
-            ->limit(3)
-            ->get();
-        
-        // Recent Livestock
-        $recentLivestock = \App\Models\Livestock::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        $inlineAds  = $adService->getInlineAds($user);
     @endphp
 
     <!-- Critical Outbreak Alerts -->
