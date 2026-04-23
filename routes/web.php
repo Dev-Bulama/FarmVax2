@@ -834,7 +834,9 @@ Route::put('/profile', [\App\Http\Controllers\Professional\ProfileController::cl
     // Telemedicine
     Route::prefix('telemedicine')->name('telemedicine.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Professional\TelemedicineController::class, 'index'])->name('index');
+        Route::get('/poll', [\App\Http\Controllers\Professional\TelemedicineController::class, 'poll'])->name('poll');
         Route::post('/{id}/accept', [\App\Http\Controllers\Professional\TelemedicineController::class, 'accept'])->name('accept');
+        Route::post('/{id}/decline', [\App\Http\Controllers\Professional\TelemedicineController::class, 'decline'])->name('decline');
         Route::get('/{id}/join', [\App\Http\Controllers\Professional\TelemedicineController::class, 'join'])->name('join');
         Route::post('/{id}/complete', [\App\Http\Controllers\Professional\TelemedicineController::class, 'complete'])->name('complete');
         Route::get('/{id}', [\App\Http\Controllers\Professional\TelemedicineController::class, 'show'])->name('show');

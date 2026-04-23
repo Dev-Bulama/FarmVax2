@@ -33,6 +33,20 @@
                 Service Requests
             </a>
 
+            <a href="{{ route('professional.telemedicine.index') }}" class="flex items-center px-2 py-2 text-sm font-medium text-white rounded-md {{ request()->routeIs('professional.telemedicine.*') ? 'bg-blue-700' : 'hover:bg-blue-700' }}">
+                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Telemedicine
+                @php
+                    $pendingCalls = \App\Models\TelemedicineRequest::where('professional_id', auth()->id())
+                        ->where('status', 'assigned')->whereNull('started_at')->count();
+                @endphp
+                @if($pendingCalls > 0)
+                    <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">{{ $pendingCalls }}</span>
+                @endif
+            </a>
+
             <a href="{{ route('professional.profile') }}" class="flex items-center px-2 py-2 text-sm font-medium text-white rounded-md {{ request()->routeIs('professional.profile') ? 'bg-blue-700' : 'hover:bg-blue-700' }}">
                 <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
