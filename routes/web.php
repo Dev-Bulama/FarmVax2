@@ -542,6 +542,8 @@ Route::delete('/settings/ai-training/{id}', [SettingsController::class, 'destroy
         Route::get('/create', [App\Http\Controllers\Admin\UserImportController::class, 'create'])->name('create');
         Route::post('/upload', [App\Http\Controllers\Admin\UserImportController::class, 'upload'])->name('upload');
         Route::post('/{id}/process', [App\Http\Controllers\Admin\UserImportController::class, 'process'])->name('process');
+        Route::post('/{id}/process-chunk', [App\Http\Controllers\Admin\UserImportController::class, 'processChunk'])->name('process-chunk');
+        Route::get('/{id}/status', [App\Http\Controllers\Admin\UserImportController::class, 'status'])->name('status');
         Route::get('/{id}', [App\Http\Controllers\Admin\UserImportController::class, 'show'])->name('show');
         Route::post('/resend-email/{importedUserId}', [App\Http\Controllers\Admin\UserImportController::class, 'resendEmail'])->name('resend-email');
         Route::post('/{id}/resend-batch', [App\Http\Controllers\Admin\UserImportController::class, 'resendBatchEmails'])->name('resend-batch');

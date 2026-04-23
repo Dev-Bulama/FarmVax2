@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Imports\ChunkReadFilter;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
@@ -131,175 +132,153 @@ class UserImportController extends Controller
     }
 }
     /**
-     * Process import with column mapping
+     * Save column mapping, mark import as started, return JSON for AJAX chunk loop.
      */
     public function process(Request $request, $importId)
     {
         $request->validate([
-            'mapping' => 'required|array',
-            'mapping.name' => 'required',
+            'mapping'       => 'required|array',
+            'mapping.name'  => 'required',
             'mapping.email' => 'required',
             'mapping.phone' => 'required',
         ]);
 
         $import = UserImport::findOrFail($importId);
-        
+
         if ($import->status !== 'pending') {
-            return back()->with('error', 'This import has already been processed.');
+            return response()->json(['error' => 'This import has already been processed.'], 422);
         }
 
-        try {
-            // Store column mapping
-            $import->update([
-                'column_mapping' => $request->mapping,
-            ]);
+        $import->update(['column_mapping' => $request->mapping]);
+        $import->markAsStarted();
 
-            // Mark as started
-            $import->markAsStarted();
-
-            // Process the import
-            $this->processImportFile($import, $request->mapping);
-
-            // Mark as completed
-            $import->markAsCompleted();
-
-            return redirect()->route('admin.import.show', $import->id)
-                ->with('success', "Import completed! {$import->successful_imports} users imported successfully.");
-
-        } catch (\Exception $e) {
-            $import->markAsFailed($e->getMessage());
-            return redirect()->route('admin.import.show', $import->id)
-                ->with('error', 'Import failed: ' . $e->getMessage());
-        }
+        return response()->json([
+            'success'        => true,
+            'import_id'      => $import->id,
+            'total_records'  => $import->total_records,
+        ]);
     }
 
     /**
-     * Process the actual import file
+     * Process a chunk of rows (called repeatedly by the browser until done).
      */
-    protected function processImportFile(UserImport $import, array $mapping)
+    public function processChunk(Request $request, $importId)
     {
-        // Prevent PHP timeout on shared hosting for large files
-        @set_time_limit(0);
-        @ini_set('memory_limit', '512M');
+        $import = UserImport::findOrFail($importId);
+
+        if ($import->status !== 'processing') {
+            return response()->json(['error' => 'Import is not in processing state.'], 422);
+        }
+
+        $startRow   = max(2, (int) $request->input('start_row', 2));
+        $chunkSize  = min(max(1, (int) $request->input('chunk_size', 100)), 200);
+        $lastDataRow = $import->total_records + 1; // row 1 = header
+        $endRow      = min($startRow + $chunkSize - 1, $lastDataRow);
+
+        @set_time_limit(120);
+        @ini_set('memory_limit', '256M');
         ignore_user_abort(true);
 
-        $filePath = storage_path('app/public/' . $import->stored_filename);
-        $spreadsheet = IOFactory::load($filePath);
-        $sheet = $spreadsheet->getActiveSheet();
-
-        $highestRow = $sheet->getHighestRow();
-        
-        // Get Nigeria as default country
+        $mapping        = $import->column_mapping;
+        $filePath       = storage_path('app/public/' . $import->stored_filename);
         $defaultCountry = Country::findByCode('NG');
 
-        $batchSize = 50; // commit every 50 rows so we don't hold one giant transaction
+        $reader = IOFactory::createReaderForFile($filePath);
+        $reader->setReadDataOnly(true);
+        $reader->setReadFilter(new ChunkReadFilter($startRow, $endRow));
+        $spreadsheet = $reader->load($filePath);
+        $sheet       = $spreadsheet->getActiveSheet();
 
-        for ($row = 2; $row <= $highestRow; $row++) {
-            // Periodically save progress so admin can see real-time status
-            if ($row % $batchSize === 0) {
-                $import->save();
-            }
-        try {
-        // Extract data based on mapping
-        $data = [];
-        
-        // Get all cells in the row
-        $cellIterator = $sheet->getRowIterator($row, $row)->current()->getCellIterator();
-        $cellIterator->setIterateOnlyExistingCells(false);
-        
-        $rowCells = [];
-        foreach ($cellIterator as $cell) {
-            $rowCells[] = $cell->getValue();
-        }
-        
-        // Map data based on column mapping
-        foreach ($mapping as $field => $columnIndex) {
-            if ($columnIndex !== null && $columnIndex !== '') {
-                $data[$field] = $rowCells[(int)$columnIndex] ?? null;
-            }
-        }
+        for ($row = $startRow; $row <= $endRow; $row++) {
+            try {
+                $rowIterator = $sheet->getRowIterator($row, $row)->current();
+                if (!$rowIterator) {
+                    continue;
+                }
+                $cellIterator = $rowIterator->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
 
-                // Validate required fields
+                $rowCells = [];
+                foreach ($cellIterator as $cell) {
+                    $rowCells[] = $cell->getValue();
+                }
+
+                $data = [];
+                foreach ($mapping as $field => $columnIndex) {
+                    if ($columnIndex !== null && $columnIndex !== '') {
+                        $data[$field] = $rowCells[(int) $columnIndex] ?? null;
+                    }
+                }
+
                 if (empty($data['name']) || empty($data['email'])) {
                     $import->addError($row, 'required', 'Missing required fields (name or email)');
                     $import->incrementFailed();
                     continue;
                 }
 
-                // Check for duplicate email
                 if (User::where('email', $data['email'])->exists()) {
-                    $import->addError($row, 'duplicate', 'Email already exists, skipped: ' . $data['email']);
+                    $import->addError($row, 'duplicate', 'Email already exists: ' . $data['email']);
                     $import->incrementDuplicates();
-                    // Continue to next record instead of stopping
                     continue;
                 }
 
-                // Generate random password
                 $password = $this->generatePassword();
 
-                // Create user
                 DB::beginTransaction();
 
                 $user = User::create([
-                    'name' => $data['name'],
-                    'email' => $data['email'],
-                    'phone' => $data['phone'] ?? null,
-                    'password' => Hash::make($password),
-                    'role' => $import->user_type,
-                    'country_id' => $defaultCountry ? $defaultCountry->id : null,
-                    'address' => $data['address'] ?? null,
-                    'farm_name' => $data['farm_name'] ?? null,
-                    'is_active' => true,
-                    'status' => 'active',
+                    'name'           => $data['name'],
+                    'email'          => $data['email'],
+                    'phone'          => $data['phone'] ?? null,
+                    'password'       => Hash::make($password),
+                    'role'           => $import->user_type,
+                    'country_id'     => $defaultCountry ? $defaultCountry->id : null,
+                    'address'        => $data['address'] ?? null,
+                    'farm_name'      => $data['farm_name'] ?? null,
+                    'is_active'      => true,
+                    'status'         => 'active',
                     'account_status' => 'active',
                 ]);
 
-                // Create role-specific profile
                 if ($import->user_type === 'volunteer') {
                     Volunteer::create([
-                        'user_id' => $user->id,
-                        'approval_status' => 'approved',
-                        'is_active' => true,
-                        'submitted_at' => now(),
+                        'user_id'           => $user->id,
+                        'approval_status'   => 'approved',
+                        'is_active'         => true,
+                        'submitted_at'      => now(),
                     ]);
                 } elseif ($import->user_type === 'animal_health_professional') {
                     AnimalHealthProfessional::create([
-                        'user_id' => $user->id,
+                        'user_id'         => $user->id,
                         'approval_status' => 'approved',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now(),
-                        'submitted_at' => now(),
+                        'approved_by'     => auth()->id(),
+                        'approved_at'     => now(),
+                        'submitted_at'    => now(),
                     ]);
-                } elseif ($import->user_type === 'farmer') {
-                    // Optionally create livestock record if spreadsheet includes livestock columns
-                    if (!empty($data['livestock_type'])) {
-                        try {
-                            \App\Models\Livestock::create([
-                                'user_id'       => $user->id,
-                                'owner_id'      => $user->id,
-                                'livestock_type' => strtolower($data['livestock_type']),
-                                'quantity'      => (int)($data['livestock_count'] ?? 1),
-                                'health_status' => 'healthy',
-                            ]);
-                        } catch (\Exception $e) {
-                            \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
-                        }
+                } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
+                    $lsType = strtolower($data['livestock_type']);
+                    try {
+                        \App\Models\Livestock::create([
+                            'user_id'        => $user->id,
+                            'owner_id'       => $user->id,
+                            'livestock_type' => $lsType,
+                            'type'           => $lsType,
+                            'quantity'       => (int) ($data['livestock_count'] ?? 1),
+                            'health_status'  => 'healthy',
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
                     }
                 }
 
-                // Track imported user
-                $importedUser = ImportedUser::create([
-                    'import_id' => $import->id,
-                    'user_id' => $user->id,
-                    'generated_password' => $password,
-                    'welcome_email_sent' => false,
+                ImportedUser::create([
+                    'import_id'         => $import->id,
+                    'user_id'           => $user->id,
+                    'generated_password'=> $password,
+                    'welcome_email_sent'=> false,
                 ]);
 
                 DB::commit();
-
-                // Send welcome email
-                $this->sendWelcomeEmail($importedUser);
-
                 $import->incrementSuccess($user->id);
 
             } catch (\Exception $e) {
@@ -308,6 +287,42 @@ class UserImportController extends Controller
                 $import->incrementFailed();
             }
         }
+
+        $done = ($endRow >= $lastDataRow);
+
+        if ($done) {
+            $import->markAsCompleted();
+        }
+
+        $import->refresh();
+
+        return response()->json([
+            'done'             => $done,
+            'next_row'         => $endRow + 1,
+            'successful'       => $import->successful_imports,
+            'failed'           => $import->failed_imports,
+            'duplicates'       => $import->duplicate_emails,
+            'total'            => $import->total_records,
+            'progress_percent' => $done ? 100 : (int) min(99, ($endRow - 1) / max(1, $import->total_records) * 100),
+            'show_url'         => route('admin.import.show', $import->id),
+        ]);
+    }
+
+    /**
+     * Return current import progress as JSON (for polling).
+     */
+    public function status($importId)
+    {
+        $import = UserImport::findOrFail($importId);
+
+        return response()->json([
+            'status'           => $import->status,
+            'successful'       => $import->successful_imports,
+            'failed'           => $import->failed_imports,
+            'duplicates'       => $import->duplicate_emails,
+            'total'            => $import->total_records,
+            'progress_percent' => $import->success_rate,
+        ]);
     }
 
     /**

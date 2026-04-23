@@ -158,12 +158,19 @@
                         </svg>
                         Farm Records
                     </a>
-                    <a href="{{ route('admin.service-requests.index') }}" 
+                    <a href="{{ route('admin.service-requests.index') }}"
                         class="flex items-center px-3 py-2 text-sm text-white rounded-md hover:bg-white/10 transition {{ request()->routeIs('admin.service-requests.index') ? 'bg-white/10' : '' }}">
                         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         Service Requests
+                    </a>
+                    <a href="{{ route('admin.telemedicine.index') }}"
+                        class="flex items-center px-3 py-2 text-sm text-white rounded-md hover:bg-white/10 transition {{ request()->routeIs('admin.telemedicine.*') ? 'bg-white/10' : '' }}">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.893L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                        </svg>
+                        Telemedicine
                     </a>
                 </div>
             </div>

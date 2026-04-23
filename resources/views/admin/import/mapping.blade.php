@@ -5,8 +5,8 @@
 
 @section('content')
 
-<!-- Progress Indicator -->
-<div class="mb-6">
+<!-- Step indicator (mapping) -->
+<div id="step-indicator" class="mb-6">
     <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium text-gray-700">Import Progress</span>
         <span class="text-sm font-medium text-gray-700">Step 2 of 3</span>
@@ -14,6 +14,33 @@
     <div class="w-full bg-gray-200 rounded-full h-2">
         <div class="bg-[#2FCB6E] h-2 rounded-full" style="width: 66%"></div>
     </div>
+</div>
+
+<!-- Processing progress (shown after submit) -->
+<div id="processing-panel" class="hidden mb-6 bg-white rounded-lg shadow p-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Importing users — please keep this page open</h3>
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-gray-700" id="progress-label">Starting…</span>
+        <span class="text-sm font-medium text-gray-700" id="progress-pct">0%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+        <div id="progress-bar" class="bg-[#2FCB6E] h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-4 text-center text-sm">
+        <div class="bg-green-50 rounded p-3">
+            <div class="text-2xl font-bold text-green-700" id="stat-ok">0</div>
+            <div class="text-xs text-green-600">Imported</div>
+        </div>
+        <div class="bg-red-50 rounded p-3">
+            <div class="text-2xl font-bold text-red-700" id="stat-fail">0</div>
+            <div class="text-xs text-red-600">Failed</div>
+        </div>
+        <div class="bg-yellow-50 rounded p-3">
+            <div class="text-2xl font-bold text-yellow-700" id="stat-dup">0</div>
+            <div class="text-xs text-yellow-600">Duplicates</div>
+        </div>
+    </div>
+    <div id="error-box" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded text-sm text-red-700"></div>
 </div>
 
 <!-- File Info -->
@@ -36,7 +63,7 @@
     <h2 class="text-xl font-semibold text-gray-800 mb-2">Map Columns to Fields</h2>
     <p class="text-sm text-gray-600 mb-6">Match your Excel columns to the corresponding database fields. Required fields are marked with <span class="text-red-500">*</span></p>
 
-    <form action="{{ route('admin.import.process', $import->id) }}" method="POST">
+    <form id="import-form" action="{{ route('admin.import.process', $import->id) }}" method="POST">
         @csrf
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -317,16 +344,133 @@
                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                 Cancel
             </a>
-            <button type="submit" 
-                    class="px-6 py-2 bg-[#2FCB6E] text-white rounded-lg hover:bg-[#25a356] transition flex items-center"
-                    onclick="return confirm('This will import {{ number_format($import->total_records) }} users. Continue?')">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="submit" id="submit-btn"
+                    class="px-6 py-2 bg-[#2FCB6E] text-white rounded-lg hover:bg-[#25a356] transition flex items-center">
+                <svg id="submit-icon" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
-                Process Import ({{ number_format($import->total_records) }} Users)
+                <svg id="submit-spinner" class="hidden animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span id="submit-label">Process Import ({{ number_format($import->total_records) }} Users)</span>
             </button>
         </div>
     </form>
 </div>
+
+<script>
+(function () {
+    const form        = document.getElementById('import-form');
+    const btn         = document.getElementById('submit-btn');
+    const spinner     = document.getElementById('submit-spinner');
+    const submitIcon  = document.getElementById('submit-icon');
+    const submitLabel = document.getElementById('submit-label');
+    const stepPanel   = document.getElementById('step-indicator');
+    const procPanel   = document.getElementById('processing-panel');
+    const progBar     = document.getElementById('progress-bar');
+    const progPct     = document.getElementById('progress-pct');
+    const progLabel   = document.getElementById('progress-label');
+    const statOk      = document.getElementById('stat-ok');
+    const statFail    = document.getElementById('stat-fail');
+    const statDup     = document.getElementById('stat-dup');
+    const errorBox    = document.getElementById('error-box');
+
+    const CSRF   = document.querySelector('[name="_token"]').value;
+    const CHUNK  = 100;
+
+    function setProgress(pct, label, data) {
+        progBar.style.width   = pct + '%';
+        progPct.textContent   = pct + '%';
+        progLabel.textContent = label;
+        if (data) {
+            statOk.textContent   = data.successful  ?? 0;
+            statFail.textContent = data.failed       ?? 0;
+            statDup.textContent  = data.duplicates   ?? 0;
+        }
+    }
+
+    function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.classList.remove('hidden');
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        submitIcon.classList.remove('hidden');
+        submitLabel.textContent = 'Retry Import';
+    }
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        if (!confirm('This will import {{ $import->total_records }} users. Continue?')) return;
+
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+        submitIcon.classList.add('hidden');
+        submitLabel.textContent = 'Starting…';
+        stepPanel.classList.add('hidden');
+        procPanel.classList.remove('hidden');
+        setProgress(0, 'Saving column mapping…', null);
+
+        // Step 1: save mapping via process endpoint
+        let startData;
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body: new FormData(form),
+            });
+            startData = await res.json();
+            if (!res.ok || !startData.success) throw new Error(startData.error || 'Failed to start import.');
+        } catch (err) {
+            showError(err.message);
+            return;
+        }
+
+        const importId   = startData.import_id;
+        const totalRecs  = startData.total_records;
+        const chunkUrl   = `/admin/import/${importId}/process-chunk`;
+        let   startRow   = 2;
+
+        setProgress(1, 'Processing rows…', null);
+
+        // Step 2: loop through chunks
+        while (true) {
+            let chunk;
+            try {
+                const res = await fetch(chunkUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN'  : CSRF,
+                        'Content-Type'  : 'application/json',
+                        'Accept'        : 'application/json',
+                    },
+                    body: JSON.stringify({ start_row: startRow, chunk_size: CHUNK }),
+                });
+                chunk = await res.json();
+                if (!res.ok) throw new Error(chunk.error || 'Chunk failed.');
+            } catch (err) {
+                showError('Error at row ' + startRow + ': ' + err.message);
+                return;
+            }
+
+            setProgress(
+                chunk.progress_percent,
+                `Row ${Math.min(startRow + CHUNK - 1, totalRecs + 1)} of ${totalRecs + 1}…`,
+                chunk
+            );
+
+            if (chunk.done) {
+                setProgress(100, 'Import complete!', chunk);
+                submitLabel.textContent = 'Done — redirecting…';
+                setTimeout(() => { window.location.href = chunk.show_url; }, 1200);
+                return;
+            }
+
+            startRow = chunk.next_row;
+        }
+    });
+})();
+</script>
 
 @endsection
