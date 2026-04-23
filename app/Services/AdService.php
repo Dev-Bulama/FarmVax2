@@ -10,39 +10,42 @@ use Carbon\Carbon;
 class AdService
 {
     /**
-     * Get ads targeted to a specific user
+     * Get ads targeted to a specific user.
+     * ads table columns: is_active (bool), target_type (string), target_roles (JSON array),
+     * target_locations (JSON), country_id, state_id, lga_id, views, clicks
      */
     public function getAdsForUser(User $user, $type = null, $limit = 3)
     {
         $query = Ad::where('is_active', true)
             ->where('start_date', '<=', Carbon::now())
-            ->where('end_date', '>=', Carbon::now());
+            ->where(function ($q) {
+                $q->whereNull('end_date')
+                  ->orWhere('end_date', '>=', Carbon::now());
+            });
 
-        // Filter by ad type if specified
         if ($type) {
             $query->where('type', $type);
         }
 
-        // Filter by target audience (role-based targeting)
-        $query->where(function($q) use ($user) {
-            $q->whereJsonContains('target_audience', 'all')
-              ->orWhereJsonContains('target_audience', $user->role);
+        // target_type: 'all' | 'role' | 'location'
+        $query->where(function ($q) use ($user) {
+            $q->where('target_type', 'all')
+              ->orWhere(function ($sq) use ($user) {
+                  $sq->where('target_type', 'role')
+                     ->whereJsonContains('target_roles', $user->role);
+              })
+              ->orWhere(function ($sq) use ($user) {
+                  $sq->where('target_type', 'location')
+                     ->where(function ($lq) use ($user) {
+                         $lq->where('country_id', $user->country_id)
+                            ->orWhere('state_id', $user->state_id)
+                            ->orWhere('lga_id', $user->lga_id);
+                     });
+              });
         });
 
-        // Filter by location if ad has location targeting
-        $query->where(function($q) use ($user) {
-            $q->whereNull('target_location')
-              ->orWhereJsonContains('target_location', ['country_id' => $user->country_id])
-              ->orWhereJsonContains('target_location', ['state_id' => $user->state_id])
-              ->orWhereJsonContains('target_location', ['lga_id' => $user->lga_id]);
-        });
+        $ads = $query->inRandomOrder()->limit($limit)->get();
 
-        // Get random ads to show variety
-        $ads = $query->inRandomOrder()
-            ->limit($limit)
-            ->get();
-
-        // Track views for these ads
         foreach ($ads as $ad) {
             $this->trackAdView($ad, $user);
         }
@@ -51,99 +54,79 @@ class AdService
     }
 
     /**
-     * Track ad view
+     * Track a single ad view (once per user per day).
      */
     public function trackAdView(Ad $ad, User $user)
     {
-        // Check if user already viewed this ad today
-        $existingView = AdView::where('ad_id', $ad->id)
+        $exists = AdView::where('ad_id', $ad->id)
             ->where('user_id', $user->id)
             ->whereDate('created_at', Carbon::today())
-            ->first();
+            ->exists();
 
-        if (!$existingView) {
-            // Create new view record
+        if (!$exists) {
             AdView::create([
-                'ad_id' => $ad->id,
-                'user_id' => $user->id,
+                'ad_id'      => $ad->id,
+                'user_id'    => $user->id,
                 'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'viewed_at' => now(),
-                'clicked' => false,
+                'viewed_at'  => now(),
             ]);
 
-            // Increment ad views count
-            $ad->increment('views_count');
+            // ads table uses 'views', not 'views_count'
+            $ad->increment('views');
         }
     }
 
     /**
-     * Track ad click
+     * Track an ad click.
      */
     public function trackAdClick($adId, User $user)
     {
         $ad = Ad::find($adId);
-
         if (!$ad) {
             return false;
         }
 
-        // Find the most recent view by this user
-        $adView = AdView::where('ad_id', $adId)
-            ->where('user_id', $user->id)
-            ->whereNull('clicked_at')
-            ->latest()
-            ->first();
-
-        if ($adView) {
-            $adView->update([
-                'clicked' => true,
-                'clicked_at' => now(),
-            ]);
-
-            // Increment ad clicks count
-            $ad->increment('clicks_count');
-
-            return true;
-        }
-
-        return false;
+        // ads table uses 'clicks', not 'clicks_count'
+        $ad->increment('clicks');
+        return true;
     }
 
     /**
-     * Get banner ads
+     * Get banner ads (type = banner).
      */
-   public function getBannerAds($user = null)
-{
-    return Ad::where('is_active', 1)
-        ->where('type', 'banner')
-        ->where('start_date', '<=', now())
-        ->where(function($query) {
-            $query->whereNull('end_date')
-                  ->orWhere('end_date', '>=', now());
-        })
-        ->orderBy('priority', 'desc')
-        ->limit(1)
-        ->get();
-}
+    public function getBannerAds($user = null)
+    {
+        return Ad::where('is_active', true)
+            ->where('type', 'banner')
+            ->where('start_date', '<=', now())
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                      ->orWhere('end_date', '>=', now());
+            })
+            ->orderBy('priority', 'desc')
+            ->limit(1)
+            ->get();
+    }
+
     /**
-     * Get sidebar ads
+     * Get sidebar ads (type = sidebar).
      */
-   public function getSidebarAds($user = null)
-{
-    return Ad::where('is_active', 1)
-        ->where('type', 'sidebar')
-        ->where('start_date', '<=', now())
-        ->where(function($query) {
-            $query->whereNull('end_date')
-                  ->orWhere('end_date', '>=', now());
-        })
-        ->orderBy('priority', 'desc')
-        ->limit(2)
-        ->get();
-}
+    public function getSidebarAds($user = null)
+    {
+        return Ad::where('is_active', true)
+            ->where('type', 'sidebar')
+            ->where('start_date', '<=', now())
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                      ->orWhere('end_date', '>=', now());
+            })
+            ->orderBy('priority', 'desc')
+            ->limit(2)
+            ->get();
+    }
+
     /**
-     * Get inline ads
+     * Get inline ads for a specific user.
      */
     public function getInlineAds(User $user)
     {

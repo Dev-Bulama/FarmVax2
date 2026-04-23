@@ -9,33 +9,36 @@ class Ad extends Model
 {
     protected $fillable = [
         'title',
-        'description',
-        'image_url',
+        'content',
+        'image',
         'image_path',
         'link_url',
         'type',
-        'target_audience',
-        'target_location',
+        'category',
+        'target_type',
+        'target_roles',
+        'target_locations',
+        'country_id',
+        'state_id',
+        'lga_id',
         'start_date',
         'end_date',
-        'views_count',
-        'clicks_count',
-        'budget',
-        'cost_per_click',
+        'views',
+        'clicks',
+        'priority',
         'is_active',
+        'status',
         'created_by',
     ];
 
     protected $casts = [
-        'target_audience' => 'array',
-        'target_location' => 'array',
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'is_active' => 'boolean',
-        'views_count' => 'integer',
-        'clicks_count' => 'integer',
-        'budget' => 'decimal:2',
-        'cost_per_click' => 'decimal:2',
+        'target_roles'     => 'array',
+        'target_locations' => 'array',
+        'start_date'       => 'date',
+        'end_date'         => 'date',
+        'is_active'        => 'boolean',
+        'views'            => 'integer',
+        'clicks'           => 'integer',
     ];
 
     /**
@@ -84,27 +87,27 @@ class Ad extends Model
      */
     public function getClickThroughRateAttribute()
     {
-        if ($this->views_count == 0) {
+        if (!$this->views) {
             return 0;
         }
-        
-        return round(($this->clicks_count / $this->views_count) * 100, 2);
+
+        return round(($this->clicks / $this->views) * 100, 2);
     }
 
     public function isCurrentlyActive()
     {
-        return $this->is_active 
-            && $this->start_date <= now() 
-            && $this->end_date >= now();
+        return $this->is_active
+            && $this->start_date <= now()
+            && ($this->end_date === null || $this->end_date >= now());
     }
 
     public function incrementViews()
     {
-        $this->increment('views_count');
+        $this->increment('views');
     }
 
     public function incrementClicks()
     {
-        $this->increment('clicks_count');
+        $this->increment('clicks');
     }
 }
