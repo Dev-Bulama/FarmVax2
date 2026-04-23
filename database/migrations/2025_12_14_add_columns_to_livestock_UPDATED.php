@@ -19,7 +19,7 @@ return new class extends Migration
             
             // Add type column if it doesn't exist
             if (!Schema::hasColumn('livestock', 'type')) {
-                $table->string('type')->after('owner_id');
+                $table->string('type')->nullable()->after('owner_id');
             }
             
             // Add breed column if it doesn't exist

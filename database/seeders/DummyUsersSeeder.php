@@ -246,9 +246,9 @@ class DummyUsersSeeder extends Seeder
         $farmer1 = User::where('email', 'farmer1@farmvax.com')->first();
         if ($farmer1 && \App\Models\Livestock::where('user_id', $farmer1->id)->count() === 0) {
             $livestockSeed = [
-                ['livestock_type' => 'cattle',  'quantity' => 15, 'health_status' => 'healthy'],
-                ['livestock_type' => 'goat',    'quantity' => 30, 'health_status' => 'healthy'],
-                ['livestock_type' => 'chicken', 'quantity' => 120, 'health_status' => 'healthy'],
+                ['livestock_type' => 'cattle',  'type' => 'cattle',  'quantity' => 15,  'health_status' => 'healthy'],
+                ['livestock_type' => 'goat',    'type' => 'goat',    'quantity' => 30,  'health_status' => 'healthy'],
+                ['livestock_type' => 'chicken', 'type' => 'chicken', 'quantity' => 120, 'health_status' => 'healthy'],
             ];
             foreach ($livestockSeed as $ls) {
                 \App\Models\Livestock::create(array_merge($ls, [
