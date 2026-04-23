@@ -12,7 +12,6 @@ use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -182,10 +181,13 @@ class UserImportController extends Controller
 
         $mapping        = $import->column_mapping;
 
-        // Cache schema checks once per chunk rather than per row
-        $hasFarmName      = Schema::hasColumn('users', 'farm_name');
-        $hasIsActive      = Schema::hasColumn('users', 'is_active');
-        $hasAccountStatus = Schema::hasColumn('users', 'account_status');
+        // Detect optional columns once per chunk using raw DB to avoid Doctrine cache issues
+        $userColumns      = DB::select("SHOW COLUMNS FROM `users`");
+        $columnNames      = array_column($userColumns, 'Field');
+        $hasFarmName      = in_array('farm_name', $columnNames);
+        $hasIsActive      = in_array('is_active', $columnNames);
+        $hasAccountStatus = in_array('account_status', $columnNames);
+
         $filePath       = storage_path('app/public/' . $import->stored_filename);
         $defaultCountry = Country::findByCode('NG');
 
