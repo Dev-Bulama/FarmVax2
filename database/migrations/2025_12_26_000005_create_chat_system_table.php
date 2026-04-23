@@ -8,28 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('chat_conversations')) { return; }
-        Schema::create('chat_conversations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->string('subject')->nullable();
-            $table->enum('status', ['open', 'assigned', 'closed'])->default('open');
-            $table->timestamp('last_message_at')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('chat_conversations')) {
+            Schema::create('chat_conversations', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
+                $table->string('subject')->nullable();
+                $table->enum('status', ['open', 'assigned', 'closed'])->default('open');
+                $table->timestamp('last_message_at')->nullable();
+                $table->timestamps();
+            });
+        }
 
-        if (Schema::hasTable('chat_messages')) { return; }
-        Schema::create('chat_messages', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('conversation_id')->constrained('chat_conversations')->onDelete('cascade');
-            $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
-            $table->text('message');
-            $table->string('attachment')->nullable();
-            $table->boolean('is_read')->default(false);
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('chat_messages')) {
+            Schema::create('chat_messages', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('conversation_id')->constrained('chat_conversations')->onDelete('cascade');
+                $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
+                $table->text('message');
+                $table->string('attachment')->nullable();
+                $table->boolean('is_read')->default(false);
+                $table->timestamp('read_at')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void
