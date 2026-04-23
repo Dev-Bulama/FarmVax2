@@ -15,7 +15,7 @@ class LocationController extends Controller
      */
     public function getCountries()
     {
-        $countries = Country::orderBy('name')->get(['id', 'name', 'code']);
+        $countries = Country::orderBy('name')->get(['id', 'name', 'iso2']);
         return response()->json($countries);
     }
 

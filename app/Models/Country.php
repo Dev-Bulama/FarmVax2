@@ -11,7 +11,6 @@ class Country extends Model
 
     protected $fillable = [
         'name',
-        'code',
         'iso2',
         'iso3',
         'phone_code',
@@ -50,8 +49,7 @@ class Country extends Model
      */
     public static function findByCode($code)
     {
-        return static::where('code', $code)
-            ->orWhere('iso2', $code)
+        return static::where('iso2', $code)
             ->orWhere('iso3', $code)
             ->first();
     }
