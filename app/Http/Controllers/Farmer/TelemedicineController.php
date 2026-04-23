@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Farmer;
 
 use App\Http\Controllers\Controller;
 use App\Models\TelemedicineRequest;
+use App\Models\AnimalHealthProfessional;
 use App\Models\Livestock;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,19 +35,43 @@ class TelemedicineController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'reason'      => 'required|string|max:1000',
-            'notes'       => 'nullable|string|max:2000',
-            'livestock_id'=> 'nullable|exists:livestock,id',
-            'priority'    => 'required|in:normal,urgent',
-            'scheduled_at'=> 'nullable|date|after:now',
+            'reason'       => 'required|string|max:1000',
+            'notes'        => 'nullable|string|max:2000',
+            'livestock_id' => 'nullable|exists:livestock,id',
+            'priority'     => 'required|in:normal,urgent',
         ]);
 
         $validated['requester_id'] = Auth::id();
 
-        TelemedicineRequest::create($validated);
+        // Find an available approved vet — prefer vets with no active calls
+        $approvedVetIds = AnimalHealthProfessional::where('approval_status', 'approved')
+            ->pluck('user_id');
 
-        return redirect()->route('farmer.telemedicine.index')
-            ->with('success', 'Video consultation request submitted. A vet will be assigned shortly.');
+        $vetId = null;
+        if ($approvedVetIds->isNotEmpty()) {
+            $busyIds = TelemedicineRequest::whereIn('status', ['assigned', 'in_progress'])
+                ->whereNotNull('professional_id')
+                ->pluck('professional_id');
+
+            $freeIds = $approvedVetIds->diff($busyIds);
+            $vetId   = $freeIds->isNotEmpty()
+                ? $freeIds->random()
+                : $approvedVetIds->random();
+        }
+
+        if ($vetId) {
+            $validated['professional_id'] = $vetId;
+            $validated['status']          = 'assigned';
+            $msg = 'A vet is available — tap "Join Call" to start your session now.';
+        } else {
+            $validated['status'] = 'pending';
+            $msg = 'No vet is available right now. Your request has been queued.';
+        }
+
+        $req = TelemedicineRequest::create($validated);
+
+        return redirect()->route('farmer.telemedicine.show', $req->id)
+            ->with('success', $msg);
     }
 
     public function show($id)

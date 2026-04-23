@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TelemedicineRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class TelemedicineController extends Controller
 {
@@ -20,6 +21,45 @@ class TelemedicineController extends Controller
                         ->with('requester', 'livestock')->latest()->paginate(10);
 
         return view('professional.telemedicine.index', compact('pending', 'myActive', 'myHistory'));
+    }
+
+    /**
+     * Poll for newly assigned calls (used by front-end every 5 s).
+     */
+    public function poll(Request $request)
+    {
+        $after = (int) $request->input('after', 0);
+
+        $calls = TelemedicineRequest::where('professional_id', Auth::id())
+            ->where('status', 'assigned')
+            ->whereNull('started_at')
+            ->where('id', '>', $after)
+            ->with('requester')
+            ->get();
+
+        return response()->json([
+            'calls' => $calls->map(fn ($r) => [
+                'id'       => $r->id,
+                'farmer'   => $r->requester->name,
+                'reason'   => Str::limit($r->reason, 120),
+                'priority' => $r->priority,
+                'join_url' => route('professional.telemedicine.join', $r->id),
+            ]),
+        ]);
+    }
+
+    /**
+     * Decline a call — releases it back to pending so another vet can pick it up.
+     */
+    public function decline($id)
+    {
+        $req = TelemedicineRequest::where('professional_id', Auth::id())
+            ->where('status', 'assigned')
+            ->findOrFail($id);
+
+        $req->update(['professional_id' => null, 'status' => 'pending']);
+
+        return response()->json(['ok' => true]);
     }
 
     public function accept($id)

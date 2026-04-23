@@ -9,7 +9,7 @@
             </svg>Back
         </a>
         <h1 class="text-3xl font-bold" style="color:#11455b;">Request Video Consultation</h1>
-        <p class="text-gray-500 mt-1">Connect with a licensed veterinarian via real-time video call</p>
+        <p class="text-gray-500 mt-1">Submit your concern — the system automatically connects you to an available vet.</p>
     </div>
 
     @if($errors->any())
@@ -63,18 +63,12 @@
                     </select>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Preferred Date & Time (Optional)</label>
-                    <input type="datetime-local" name="scheduled_at" value="{{ old('scheduled_at') }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2">
-                    <p class="text-xs text-gray-400 mt-1">Leave blank and a vet will contact you as soon as possible.</p>
-                </div>
             </div>
         </div>
 
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-            <strong>How it works:</strong> After submitting, an approved veterinarian will be assigned to your request.
-            You'll see a "Join Call" button appear — click it to enter a private video room powered by Jitsi Meet (no downloads needed).
+            <strong>How it works:</strong> After submitting, an available vet is automatically assigned.
+            You'll land directly on a page with a <strong>Join Call</strong> button — click it to start your private video session instantly (no app download needed).
         </div>
 
         <div class="flex items-center justify-between bg-white rounded-xl shadow p-5">
