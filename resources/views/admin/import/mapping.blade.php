@@ -429,7 +429,7 @@
 
         const importId   = startData.import_id;
         const totalRecs  = startData.total_records;
-        const chunkUrl   = `/admin/import/${importId}/process-chunk`;
+        const chunkUrl   = '{{ route("admin.import.process-chunk", ":id") }}'.replace(':id', importId);
         let   startRow   = 2;
 
         setProgress(1, 'Processing rows…', null);
@@ -448,7 +448,7 @@
                     body: JSON.stringify({ start_row: startRow, chunk_size: CHUNK }),
                 });
                 chunk = await res.json();
-                if (!res.ok) throw new Error(chunk.error || 'Chunk failed.');
+                if (!res.ok) throw new Error(chunk.error || chunk.message || 'Chunk failed.');
             } catch (err) {
                 showError('Error at row ' + startRow + ': ' + err.message);
                 return;

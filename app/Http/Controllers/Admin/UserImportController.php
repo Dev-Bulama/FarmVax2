@@ -164,160 +164,213 @@ class UserImportController extends Controller
      */
     public function processChunk(Request $request, $importId)
     {
-        $import = UserImport::findOrFail($importId);
+        try {
+            $import = UserImport::findOrFail($importId);
 
-        if ($import->status !== 'processing') {
-            return response()->json(['error' => 'Import is not in processing state.'], 422);
-        }
-
-        $startRow   = max(2, (int) $request->input('start_row', 2));
-        $chunkSize  = min(max(1, (int) $request->input('chunk_size', 100)), 200);
-        $lastDataRow = $import->total_records + 1; // row 1 = header
-        $endRow      = min($startRow + $chunkSize - 1, $lastDataRow);
-
-        @set_time_limit(120);
-        @ini_set('memory_limit', '256M');
-        ignore_user_abort(true);
-
-        $mapping        = $import->column_mapping;
-
-        // Detect optional columns once per chunk using raw DB to avoid Doctrine cache issues
-        $userColumns      = DB::select("SHOW COLUMNS FROM `users`");
-        $columnNames      = array_column($userColumns, 'Field');
-        $hasFarmName      = in_array('farm_name', $columnNames);
-        $hasIsActive      = in_array('is_active', $columnNames);
-        $hasAccountStatus = in_array('account_status', $columnNames);
-
-        $filePath       = storage_path('app/public/' . $import->stored_filename);
-        $defaultCountry = Country::findByCode('NG');
-
-        $reader = IOFactory::createReaderForFile($filePath);
-        $reader->setReadDataOnly(true);
-        $reader->setReadFilter(new ChunkReadFilter($startRow, $endRow));
-        $spreadsheet = $reader->load($filePath);
-        $sheet       = $spreadsheet->getActiveSheet();
-
-        for ($row = $startRow; $row <= $endRow; $row++) {
-            try {
-                $rowIterator = $sheet->getRowIterator($row, $row)->current();
-                if (!$rowIterator) {
-                    continue;
-                }
-                $cellIterator = $rowIterator->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(false);
-
-                $rowCells = [];
-                foreach ($cellIterator as $cell) {
-                    $rowCells[] = $cell->getValue();
-                }
-
-                $data = [];
-                foreach ($mapping as $field => $columnIndex) {
-                    if ($columnIndex !== null && $columnIndex !== '') {
-                        $data[$field] = $rowCells[(int) $columnIndex] ?? null;
-                    }
-                }
-
-                if (empty($data['name']) || empty($data['email'])) {
-                    $import->addError($row, 'required', 'Missing required fields (name or email)');
-                    $import->incrementFailed();
-                    continue;
-                }
-
-                if (User::where('email', $data['email'])->exists()) {
-                    $import->addError($row, 'duplicate', 'Email already exists: ' . $data['email']);
-                    $import->incrementDuplicates();
-                    continue;
-                }
-
-                $password = $this->generatePassword();
-
-                DB::beginTransaction();
-
-                $userPayload = [
-                    'name'           => $data['name'],
-                    'email'          => $data['email'],
-                    'phone'          => $data['phone'] ?? null,
-                    'password'       => Hash::make($password),
-                    'role'           => $import->user_type,
-                    'country_id'     => $defaultCountry ? $defaultCountry->id : null,
-                    'address'        => $data['address'] ?? null,
-                    'status'         => 'active',
-                ];
-
-                // Only include optional columns that exist in the table
-                if ($hasFarmName)      { $userPayload['farm_name']      = $data['farm_name'] ?? null; }
-                if ($hasIsActive)      { $userPayload['is_active']      = true; }
-                if ($hasAccountStatus) { $userPayload['account_status'] = 'active'; }
-
-                $user = User::create($userPayload);
-
-                if ($import->user_type === 'volunteer') {
-                    Volunteer::create([
-                        'user_id'           => $user->id,
-                        'approval_status'   => 'approved',
-                        'is_active'         => true,
-                        'submitted_at'      => now(),
-                    ]);
-                } elseif ($import->user_type === 'animal_health_professional') {
-                    AnimalHealthProfessional::create([
-                        'user_id'         => $user->id,
-                        'approval_status' => 'approved',
-                        'approved_by'     => auth()->id(),
-                        'approved_at'     => now(),
-                        'submitted_at'    => now(),
-                    ]);
-                } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
-                    $lsType = strtolower($data['livestock_type']);
-                    try {
-                        \App\Models\Livestock::create([
-                            'user_id'        => $user->id,
-                            'owner_id'       => $user->id,
-                            'livestock_type' => $lsType,
-                            'type'           => $lsType,
-                            'quantity'       => (int) ($data['livestock_count'] ?? 1),
-                            'health_status'  => 'healthy',
-                        ]);
-                    } catch (\Exception $e) {
-                        \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
-                    }
-                }
-
-                ImportedUser::create([
-                    'import_id'         => $import->id,
-                    'user_id'           => $user->id,
-                    'generated_password'=> $password,
-                    'welcome_email_sent'=> false,
-                ]);
-
-                DB::commit();
-                $import->incrementSuccess($user->id);
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                $import->addError($row, 'exception', $e->getMessage());
-                $import->incrementFailed();
+            if ($import->status !== 'processing') {
+                return response()->json(['error' => 'Import is not in processing state.'], 422);
             }
+
+            $startRow    = max(2, (int) $request->input('start_row', 2));
+            $chunkSize   = min(max(1, (int) $request->input('chunk_size', 100)), 200);
+            $lastDataRow = $import->total_records + 1; // row 1 = header
+            $endRow      = min($startRow + $chunkSize - 1, $lastDataRow);
+
+            @set_time_limit(120);
+            @ini_set('memory_limit', '256M');
+            ignore_user_abort(true);
+
+            $mapping = $import->column_mapping;
+
+            // Detect optional columns once per chunk using raw DB to avoid Doctrine cache issues
+            $userColumns      = DB::select("SHOW COLUMNS FROM `users`");
+            $columnNames      = array_column($userColumns, 'Field');
+            $hasFarmName      = in_array('farm_name', $columnNames);
+            $hasIsActive      = in_array('is_active', $columnNames);
+            $hasAccountStatus = in_array('account_status', $columnNames);
+
+            $filePath = storage_path('app/public/' . $import->stored_filename);
+
+            if (!file_exists($filePath)) {
+                return response()->json(['error' => 'Import file not found on server. Please re-upload and try again.'], 422);
+            }
+
+            $defaultCountry = Country::findByCode('NG');
+
+            $reader = IOFactory::createReaderForFile($filePath);
+            $reader->setReadDataOnly(true);
+            $reader->setReadFilter(new ChunkReadFilter($startRow, $endRow));
+            $spreadsheet = $reader->load($filePath);
+            $sheet       = $spreadsheet->getActiveSheet();
+
+            for ($row = $startRow; $row <= $endRow; $row++) {
+                try {
+                    $rowIterator = $sheet->getRowIterator($row, $row)->current();
+                    if (!$rowIterator) {
+                        continue;
+                    }
+                    $cellIterator = $rowIterator->getCellIterator();
+                    $cellIterator->setIterateOnlyExistingCells(false);
+
+                    $rowCells = [];
+                    foreach ($cellIterator as $cell) {
+                        $rowCells[] = $cell->getValue();
+                    }
+
+                    $data = [];
+                    foreach ($mapping as $field => $columnIndex) {
+                        if ($columnIndex !== null && $columnIndex !== '') {
+                            $data[$field] = $rowCells[(int) $columnIndex] ?? null;
+                        }
+                    }
+
+                    if (empty($data['name']) || empty($data['email'])) {
+                        $import->addError($row, 'required', 'Missing required fields (name or email)');
+                        $import->incrementFailed();
+                        continue;
+                    }
+
+                    $existingUser = User::where('email', $data['email'])->first();
+
+                    if ($existingUser) {
+                        // For existing farmers, add livestock to their existing records instead of skipping
+                        if ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
+                            $lsType = strtolower($data['livestock_type']);
+                            $qty    = max(1, (int) ($data['livestock_count'] ?? 1));
+                            try {
+                                $existing = \App\Models\Livestock::where('user_id', $existingUser->id)
+                                    ->where('livestock_type', $lsType)
+                                    ->first();
+                                if ($existing) {
+                                    $existing->increment('quantity', $qty);
+                                } else {
+                                    \App\Models\Livestock::create([
+                                        'user_id'        => $existingUser->id,
+                                        'owner_id'       => $existingUser->id,
+                                        'livestock_type' => $lsType,
+                                        'type'           => $lsType,
+                                        'quantity'       => $qty,
+                                        'health_status'  => 'healthy',
+                                    ]);
+                                }
+                            } catch (\Exception $e) {
+                                \Log::warning("Livestock update skipped for existing user {$existingUser->id}: " . $e->getMessage());
+                            }
+                        }
+                        $import->incrementDuplicates();
+                        continue;
+                    }
+
+                    $password = $this->generatePassword();
+
+                    DB::beginTransaction();
+
+                    $userPayload = [
+                        'name'       => $data['name'],
+                        'email'      => $data['email'],
+                        'phone'      => $data['phone'] ?? null,
+                        'password'   => Hash::make($password),
+                        'role'       => $import->user_type,
+                        'country_id' => $defaultCountry ? $defaultCountry->id : null,
+                        'address'    => $data['address'] ?? null,
+                        'status'     => 'active',
+                    ];
+
+                    // Only include optional columns that exist in the table
+                    if ($hasFarmName)      { $userPayload['farm_name']      = $data['farm_name'] ?? null; }
+                    if ($hasIsActive)      { $userPayload['is_active']      = true; }
+                    if ($hasAccountStatus) { $userPayload['account_status'] = 'active'; }
+
+                    $user = User::create($userPayload);
+
+                    if ($import->user_type === 'volunteer') {
+                        $volColumns = array_column(DB::select("SHOW COLUMNS FROM `volunteers`"), 'Field');
+                        $volPayload = [
+                            'user_id'         => $user->id,
+                            'approval_status' => 'approved',
+                            'submitted_at'    => now(),
+                        ];
+                        if (in_array('is_active', $volColumns)) {
+                            $volPayload['is_active'] = true;
+                        }
+                        Volunteer::create($volPayload);
+                    } elseif ($import->user_type === 'animal_health_professional') {
+                        AnimalHealthProfessional::create([
+                            'user_id'         => $user->id,
+                            'approval_status' => 'approved',
+                            'approved_by'     => auth()->id(),
+                            'approved_at'     => now(),
+                            'submitted_at'    => now(),
+                        ]);
+                    } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
+                        $lsType = strtolower($data['livestock_type']);
+                        $qty    = max(1, (int) ($data['livestock_count'] ?? 1));
+                        try {
+                            $existing = \App\Models\Livestock::where('user_id', $user->id)
+                                ->where('livestock_type', $lsType)
+                                ->first();
+                            if ($existing) {
+                                $existing->increment('quantity', $qty);
+                            } else {
+                                \App\Models\Livestock::create([
+                                    'user_id'        => $user->id,
+                                    'owner_id'       => $user->id,
+                                    'livestock_type' => $lsType,
+                                    'type'           => $lsType,
+                                    'quantity'       => $qty,
+                                    'health_status'  => 'healthy',
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
+                        }
+                    }
+
+                    ImportedUser::create([
+                        'import_id'          => $import->id,
+                        'user_id'            => $user->id,
+                        'generated_password' => $password,
+                        'welcome_email_sent' => false,
+                    ]);
+
+                    DB::commit();
+                    $import->incrementSuccess($user->id);
+
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    $import->addError($row, 'exception', $e->getMessage());
+                    $import->incrementFailed();
+                }
+            }
+
+            $done = ($endRow >= $lastDataRow);
+
+            if ($done) {
+                $import->markAsCompleted();
+            }
+
+            $import->refresh();
+
+            return response()->json([
+                'done'             => $done,
+                'next_row'         => $endRow + 1,
+                'successful'       => $import->successful_imports,
+                'failed'           => $import->failed_imports,
+                'duplicates'       => $import->duplicate_emails,
+                'total'            => $import->total_records,
+                'progress_percent' => $done ? 100 : (int) min(99, ($endRow - 1) / max(1, $import->total_records) * 100),
+                'show_url'         => route('admin.import.show', $import->id),
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('processChunk fatal error: ' . $e->getMessage(), [
+                'import_id' => $importId,
+                'start_row' => $request->input('start_row'),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+            ]);
+            return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-
-        $done = ($endRow >= $lastDataRow);
-
-        if ($done) {
-            $import->markAsCompleted();
-        }
-
-        $import->refresh();
-
-        return response()->json([
-            'done'             => $done,
-            'next_row'         => $endRow + 1,
-            'successful'       => $import->successful_imports,
-            'failed'           => $import->failed_imports,
-            'duplicates'       => $import->duplicate_emails,
-            'total'            => $import->total_records,
-            'progress_percent' => $done ? 100 : (int) min(99, ($endRow - 1) / max(1, $import->total_records) * 100),
-            'show_url'         => route('admin.import.show', $import->id),
-        ]);
     }
 
     /**

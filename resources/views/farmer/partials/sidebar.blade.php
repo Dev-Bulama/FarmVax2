@@ -107,6 +107,14 @@
                 <span>Farm Records</span>
             </a>
 
+            <!-- Telemedicine -->
+            <a href="{{ route('farmer.telemedicine.index') }}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all {{ request()->routeIs('farmer.telemedicine.*') ? 'bg-green-700 text-white shadow-lg' : 'text-green-100 hover:bg-green-700/50 hover:text-white' }}">
+                <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                <span>Telemedicine</span>
+            </a>
+
             <!-- Divider -->
             <!-- <div class="pt-2 pb-2">
                 <div class="border-t border-green-700"></div>
