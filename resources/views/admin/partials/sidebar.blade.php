@@ -326,6 +326,9 @@
         <a href="{{ route('admin.settings.professional-types') }}" class="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition rounded-lg">
             Professional Types
         </a>
+        <a href="{{ route('admin.settings.disease-detection') }}" class="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition rounded-lg {{ request()->routeIs('admin.settings.disease-detection') ? 'text-white bg-white/10' : '' }}">
+            Disease Detection AI
+        </a>
         <a href="{{ route('admin.settings.telemedicine') }}" class="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition rounded-lg {{ request()->routeIs('admin.settings.telemedicine') ? 'text-white bg-white/10' : '' }}">
             Telemedicine
         </a>

@@ -479,4 +479,35 @@ public function updateTelemedicine(Request $request)
     return redirect()->route('admin.settings.telemedicine')
         ->with('success', 'Telemedicine settings updated successfully.');
 }
+
+public function diseaseDetection()
+{
+    $provider        = Setting::get('disease_detection_provider', 'anthropic');
+    $openaiKey       = Setting::get('disease_detection_openai_key', '');
+    $openaiModel     = Setting::get('disease_detection_openai_model', 'gpt-4o');
+    $anthropicKey    = Setting::get('disease_detection_anthropic_key', '');
+    $anthropicModel  = Setting::get('disease_detection_anthropic_model', 'claude-sonnet-4-6');
+
+    return view('admin.settings.disease-detection', compact(
+        'provider', 'openaiKey', 'openaiModel', 'anthropicKey', 'anthropicModel'
+    ));
+}
+
+public function updateDiseaseDetection(Request $request)
+{
+    $validated = $request->validate([
+        'disease_detection_provider'       => 'required|in:anthropic,openai',
+        'disease_detection_openai_key'     => 'nullable|string|max:500',
+        'disease_detection_openai_model'   => 'nullable|string|max:100',
+        'disease_detection_anthropic_key'  => 'nullable|string|max:500',
+        'disease_detection_anthropic_model'=> 'nullable|string|max:100',
+    ]);
+
+    foreach ($validated as $key => $value) {
+        Setting::set($key, $value ?? '', 'string', 'disease_detection');
+    }
+
+    return redirect()->route('admin.settings.disease-detection')
+        ->with('success', 'Disease Detection AI settings saved successfully.');
+}
 }
