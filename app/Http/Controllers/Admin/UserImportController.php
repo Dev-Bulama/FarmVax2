@@ -255,15 +255,16 @@ class UserImportController extends Controller
                     if ($existingUser) {
                         // For existing farmers, add livestock to their existing records instead of skipping
                         if ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
-                            $lsType = strtolower(trim((string)$data['livestock_type']));
-                            $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
+                            $lsType     = strtolower(trim((string)$data['livestock_type']));
+                            $lsTypeNorm = $this->normalizeLivestockType($lsType);
+                            $qty        = $this->parseQuantity($data['livestock_count'] ?? null);
                             if (count($lsDebug['samples']) < 3) {
-                                $lsDebug['samples'][] = ['row' => $row, 'raw_type' => $data['livestock_type'], 'raw_count' => $data['livestock_count'] ?? null, 'parsed_qty' => $qty, 'path' => 'existing_user'];
+                                $lsDebug['samples'][] = ['row' => $row, 'raw_type' => $data['livestock_type'], 'normalized_type' => $lsTypeNorm, 'raw_count' => $data['livestock_count'] ?? null, 'parsed_qty' => $qty, 'path' => 'existing_user'];
                             }
                             try {
                                 $existing = \App\Models\Livestock::where('user_id', $existingUser->id)
-                                    ->where(function ($q) use ($lsType, $hasLsType, $hasTypeCol) {
-                                        if ($hasLsType)  { $q->orWhere('livestock_type', $lsType); }
+                                    ->where(function ($q) use ($lsTypeNorm, $lsType, $hasLsType, $hasTypeCol) {
+                                        if ($hasLsType)  { $q->orWhere('livestock_type', $lsTypeNorm); }
                                         if ($hasTypeCol) { $q->orWhere('type',           $lsType); }
                                     })
                                     ->first();
@@ -328,15 +329,16 @@ class UserImportController extends Controller
                             'submitted_at'    => now(),
                         ]);
                     } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
-                        $lsType = strtolower(trim((string)$data['livestock_type']));
-                        $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
+                        $lsType     = strtolower(trim((string)$data['livestock_type']));
+                        $lsTypeNorm = $this->normalizeLivestockType($lsType);
+                        $qty        = $this->parseQuantity($data['livestock_count'] ?? null);
                         if (count($lsDebug['samples']) < 3) {
-                            $lsDebug['samples'][] = ['row' => $row, 'raw_type' => $data['livestock_type'], 'raw_count' => $data['livestock_count'] ?? null, 'parsed_qty' => $qty, 'path' => 'new_user'];
+                            $lsDebug['samples'][] = ['row' => $row, 'raw_type' => $data['livestock_type'], 'normalized_type' => $lsTypeNorm, 'raw_count' => $data['livestock_count'] ?? null, 'parsed_qty' => $qty, 'path' => 'new_user'];
                         }
                         try {
                             $existing = \App\Models\Livestock::where('user_id', $user->id)
-                                ->where(function ($q) use ($lsType, $hasLsType, $hasTypeCol) {
-                                    if ($hasLsType)  { $q->orWhere('livestock_type', $lsType); }
+                                ->where(function ($q) use ($lsTypeNorm, $lsType, $hasLsType, $hasTypeCol) {
+                                    if ($hasLsType)  { $q->orWhere('livestock_type', $lsTypeNorm); }
                                     if ($hasTypeCol) { $q->orWhere('type',           $lsType); }
                                 })
                                 ->first();
@@ -443,11 +445,44 @@ class UserImportController extends Controller
             'health_status' => 'healthy',
         ];
 
-        if ($hasLsType)  { $payload['livestock_type'] = $lsType; }
+        // livestock_type is an ENUM — must use a valid value or MySQL raises 1265
+        if ($hasLsType)  { $payload['livestock_type'] = $this->normalizeLivestockType($lsType); }
         if ($hasTypeCol) { $payload['type']           = $lsType; }
         if ($hasQty)     { $payload['quantity']       = $qty; }
 
         \App\Models\Livestock::create($payload);
+    }
+
+    /**
+     * Map any freeform livestock type string to a valid DB enum value.
+     * Defaults to 'other' so the INSERT never fails with SQLSTATE 1265.
+     */
+    protected function normalizeLivestockType(string $raw): string
+    {
+        static $valid = [
+            'cattle','goat','sheep','pig','chicken','duck',
+            'turkey','rabbit','horse','donkey','other',
+        ];
+        static $aliases = [
+            'cow'        => 'cattle',  'cows'     => 'cattle',  'bovine'  => 'cattle',
+            'bull'       => 'cattle',  'bulls'    => 'cattle',  'beef'    => 'cattle',
+            'dairy'      => 'cattle',  'heifer'   => 'cattle',
+            'poultry'    => 'chicken', 'hen'      => 'chicken', 'hens'    => 'chicken',
+            'fowl'       => 'chicken', 'broiler'  => 'chicken', 'layer'   => 'chicken',
+            'goats'      => 'goat',    'sheep'    => 'sheep',   'lambs'   => 'sheep',
+            'ram'        => 'sheep',   'ewe'      => 'sheep',
+            'pigs'       => 'pig',     'swine'    => 'pig',     'hog'     => 'pig',
+            'hogs'       => 'pig',     'boar'     => 'pig',     'sow'     => 'pig',
+            'rabbits'    => 'rabbit',  'ducks'    => 'duck',    'turkeys' => 'turkey',
+            'horses'     => 'horse',   'donkeys'  => 'donkey',  'ass'     => 'donkey',
+        ];
+
+        $v = strtolower(trim($raw));
+
+        if (in_array($v, $valid))     { return $v; }
+        if (isset($aliases[$v]))      { return $aliases[$v]; }
+
+        return 'other';
     }
 
     /**
