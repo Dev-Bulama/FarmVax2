@@ -38,17 +38,24 @@ class TelemedicineSignalController extends Controller
     public function poll(Request $request, string $roomCode)
     {
         $request->validate([
-            'for_role' => 'required|in:caller,callee',
-            'last_id'  => 'nullable|integer|min:0',
+            'for_role'  => 'required|in:caller,callee',
+            'last_id'   => 'nullable|integer|min:0',
+            'joined_at' => 'nullable|integer|min:0',
         ]);
 
         $this->authorizeRoom($roomCode);
 
-        $signals = TelemedicineSignal::forRoom(
-            $roomCode,
-            $request->for_role,
-            (int) $request->input('last_id', 0)
-        );
+        $fromRole  = $request->for_role === 'caller' ? 'callee' : 'caller';
+        $afterId   = (int) $request->input('last_id', 0);
+        // Only fetch signals newer than when this side joined (prevents stale hangup from last session)
+        $joinedAt  = $request->input('joined_at') ? \Carbon\Carbon::createFromTimestamp((int) $request->input('joined_at')) : now()->subMinutes(5);
+
+        $signals = TelemedicineSignal::where('room_code', $roomCode)
+            ->where('from_role', $fromRole)
+            ->where('id', '>', $afterId)
+            ->where('created_at', '>=', $joinedAt)
+            ->orderBy('id')
+            ->get();
 
         return response()->json([
             'signals' => $signals->map(fn($s) => [

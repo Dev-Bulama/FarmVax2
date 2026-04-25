@@ -85,7 +85,8 @@ class TelemedicineController extends Controller
             $req->update(['status' => 'in_progress', 'started_at' => now()]);
         }
 
-        return view('professional.telemedicine.room', compact('req'));
+        $joinedAt = now()->timestamp;
+        return view('professional.telemedicine.room', compact('req', 'joinedAt'));
     }
 
     public function complete(Request $request, $id)
