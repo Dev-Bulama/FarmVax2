@@ -15,8 +15,8 @@ class DiseaseDetectionService
 
     public function __construct()
     {
-        $this->apiKey = config('services.anthropic.key', env('ANTHROPIC_API_KEY', ''));
-        $this->model  = config('services.anthropic.model', 'claude-sonnet-4-6');
+        $this->apiKey = (string) (config('services.anthropic.key') ?? env('ANTHROPIC_API_KEY') ?? '');
+        $this->model  = (string) (config('services.anthropic.model') ?? 'claude-sonnet-4-6');
     }
 
     /**
