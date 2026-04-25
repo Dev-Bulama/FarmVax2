@@ -195,6 +195,20 @@ class UserImportController extends Controller
             $hasTypeCol   = in_array('type',           $lsColumns);
             $hasLsQty     = in_array('quantity',       $lsColumns);
 
+            // Debug counters — returned in JSON so the browser console shows what happened
+            $lsDebug = [
+                'schema'      => [
+                    'has_livestock_type' => $hasLsType,
+                    'has_type'           => $hasTypeCol,
+                    'has_quantity'       => $hasLsQty,
+                ],
+                'created'     => 0,
+                'incremented' => 0,
+                'skipped'     => 0,
+                'errors'      => [],
+                'samples'     => [],   // first 3 rows' raw livestock values
+            ];
+
             $filePath = storage_path('app/public/' . $import->stored_filename);
 
             if (!file_exists($filePath)) {
@@ -243,6 +257,9 @@ class UserImportController extends Controller
                         if ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
                             $lsType = strtolower(trim((string)$data['livestock_type']));
                             $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
+                            if (count($lsDebug['samples']) < 3) {
+                                $lsDebug['samples'][] = ['row' => $row, 'raw_type' => $data['livestock_type'], 'raw_count' => $data['livestock_count'] ?? null, 'parsed_qty' => $qty, 'path' => 'existing_user'];
+                            }
                             try {
                                 $existing = \App\Models\Livestock::where('user_id', $existingUser->id)
                                     ->where(function ($q) use ($lsType, $hasLsType, $hasTypeCol) {
@@ -252,12 +269,18 @@ class UserImportController extends Controller
                                     ->first();
                                 if ($existing) {
                                     $this->incrementOrSetQuantity($existing, $qty, $hasLsQty);
+                                    $lsDebug['incremented']++;
                                 } else {
                                     $this->createImportedLivestock($existingUser->id, $lsType, $qty, $hasLsType, $hasTypeCol, $hasLsQty);
+                                    $lsDebug['created']++;
                                 }
                             } catch (\Exception $e) {
+                                $lsDebug['skipped']++;
+                                $lsDebug['errors'][] = 'Row ' . $row . ' (existing user): ' . $e->getMessage();
                                 \Log::warning("Livestock update skipped for existing user {$existingUser->id}: " . $e->getMessage());
                             }
+                        } else {
+                            $lsDebug['skipped']++;
                         }
                         $import->incrementDuplicates();
                         continue;
@@ -307,6 +330,9 @@ class UserImportController extends Controller
                     } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
                         $lsType = strtolower(trim((string)$data['livestock_type']));
                         $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
+                        if (count($lsDebug['samples']) < 3) {
+                            $lsDebug['samples'][] = ['row' => $row, 'raw_type' => $data['livestock_type'], 'raw_count' => $data['livestock_count'] ?? null, 'parsed_qty' => $qty, 'path' => 'new_user'];
+                        }
                         try {
                             $existing = \App\Models\Livestock::where('user_id', $user->id)
                                 ->where(function ($q) use ($lsType, $hasLsType, $hasTypeCol) {
@@ -316,10 +342,14 @@ class UserImportController extends Controller
                                 ->first();
                             if ($existing) {
                                 $this->incrementOrSetQuantity($existing, $qty, $hasLsQty);
+                                $lsDebug['incremented']++;
                             } else {
                                 $this->createImportedLivestock($user->id, $lsType, $qty, $hasLsType, $hasTypeCol, $hasLsQty);
+                                $lsDebug['created']++;
                             }
                         } catch (\Exception $e) {
+                            $lsDebug['skipped']++;
+                            $lsDebug['errors'][] = 'Row ' . $row . ' (new user): ' . $e->getMessage();
                             \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
                         }
                     }
@@ -358,6 +388,7 @@ class UserImportController extends Controller
                 'total'            => $import->total_records,
                 'progress_percent' => $done ? 100 : (int) min(99, ($endRow - 1) / max(1, $import->total_records) * 100),
                 'show_url'         => route('admin.import.show', $import->id),
+                'livestock_debug'  => $lsDebug,
             ]);
 
         } catch (\Throwable $e) {
