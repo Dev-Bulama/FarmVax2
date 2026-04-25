@@ -360,6 +360,8 @@ Route::get('/settings/general', [SettingsController::class, 'general'])->name('s
 Route::put('/settings/general', [SettingsController::class, 'updateGeneral'])->name('settings.general.update');
 Route::get('/settings/telemedicine', [SettingsController::class, 'telemedicine'])->name('settings.telemedicine');
 Route::put('/settings/telemedicine', [SettingsController::class, 'updateTelemedicine'])->name('settings.telemedicine.update');
+Route::get('/settings/disease-detection', [SettingsController::class, 'diseaseDetection'])->name('settings.disease-detection');
+Route::put('/settings/disease-detection', [SettingsController::class, 'updateDiseaseDetection'])->name('settings.disease-detection.update');
    
 // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
