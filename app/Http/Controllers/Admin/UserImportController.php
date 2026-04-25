@@ -189,6 +189,12 @@ class UserImportController extends Controller
             $hasIsActive      = in_array('is_active', $columnNames);
             $hasAccountStatus = in_array('account_status', $columnNames);
 
+            // Detect livestock column variants once per chunk
+            $lsColumns    = array_column(DB::select("SHOW COLUMNS FROM `livestock`"), 'Field');
+            $hasLsType    = in_array('livestock_type', $lsColumns);
+            $hasTypeCol   = in_array('type',           $lsColumns);
+            $hasLsQty     = in_array('quantity',       $lsColumns);
+
             $filePath = storage_path('app/public/' . $import->stored_filename);
 
             if (!file_exists($filePath)) {
@@ -239,15 +245,15 @@ class UserImportController extends Controller
                             $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
                             try {
                                 $existing = \App\Models\Livestock::where('user_id', $existingUser->id)
-                                    ->where(function ($q) use ($lsType) {
-                                        $q->where('livestock_type', $lsType)
-                                          ->orWhere('type', $lsType);
+                                    ->where(function ($q) use ($lsType, $hasLsType, $hasTypeCol) {
+                                        if ($hasLsType)  { $q->orWhere('livestock_type', $lsType); }
+                                        if ($hasTypeCol) { $q->orWhere('type',           $lsType); }
                                     })
                                     ->first();
                                 if ($existing) {
-                                    $this->incrementOrSetQuantity($existing, $qty);
+                                    $this->incrementOrSetQuantity($existing, $qty, $hasLsQty);
                                 } else {
-                                    $this->createImportedLivestock($existingUser->id, $lsType, $qty);
+                                    $this->createImportedLivestock($existingUser->id, $lsType, $qty, $hasLsType, $hasTypeCol, $hasLsQty);
                                 }
                             } catch (\Exception $e) {
                                 \Log::warning("Livestock update skipped for existing user {$existingUser->id}: " . $e->getMessage());
@@ -303,15 +309,15 @@ class UserImportController extends Controller
                         $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
                         try {
                             $existing = \App\Models\Livestock::where('user_id', $user->id)
-                                ->where(function ($q) use ($lsType) {
-                                    $q->where('livestock_type', $lsType)
-                                      ->orWhere('type', $lsType);
+                                ->where(function ($q) use ($lsType, $hasLsType, $hasTypeCol) {
+                                    if ($hasLsType)  { $q->orWhere('livestock_type', $lsType); }
+                                    if ($hasTypeCol) { $q->orWhere('type',           $lsType); }
                                 })
                                 ->first();
                             if ($existing) {
-                                $this->incrementOrSetQuantity($existing, $qty);
+                                $this->incrementOrSetQuantity($existing, $qty, $hasLsQty);
                             } else {
-                                $this->createImportedLivestock($user->id, $lsType, $qty);
+                                $this->createImportedLivestock($user->id, $lsType, $qty, $hasLsType, $hasTypeCol, $hasLsQty);
                             }
                         } catch (\Exception $e) {
                             \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
@@ -383,33 +389,32 @@ class UserImportController extends Controller
     }
 
     /**
-     * Increment livestock quantity, falling back to updating directly if the
-     * quantity column doesn't exist yet (schema not yet migrated).
+     * Increment livestock quantity using pre-detected schema flags.
      */
-    protected function incrementOrSetQuantity(\App\Models\Livestock $record, int $qty): void
+    protected function incrementOrSetQuantity(\App\Models\Livestock $record, int $qty, bool $hasQty = true): void
     {
-        if (\Illuminate\Support\Facades\Schema::hasColumn('livestock', 'quantity')) {
+        if ($hasQty) {
             $record->increment('quantity', $qty);
         }
-        // If no quantity column, silently skip — the record was found so the type exists
     }
 
     /**
-     * Create a livestock record during import, omitting farm_record_id if it's nullable.
+     * Create a livestock record during import.
+     * Only includes columns that actually exist in this installation's schema.
      */
-    protected function createImportedLivestock(int $userId, string $lsType, int $qty): void
-    {
+    protected function createImportedLivestock(
+        int $userId, string $lsType, int $qty,
+        bool $hasLsType = true, bool $hasTypeCol = true, bool $hasQty = true
+    ): void {
         $payload = [
-            'user_id'        => $userId,
-            'owner_id'       => $userId,
-            'livestock_type' => $lsType,
-            'type'           => $lsType,
-            'health_status'  => 'healthy',
+            'user_id'       => $userId,
+            'owner_id'      => $userId,
+            'health_status' => 'healthy',
         ];
 
-        if (\Illuminate\Support\Facades\Schema::hasColumn('livestock', 'quantity')) {
-            $payload['quantity'] = $qty;
-        }
+        if ($hasLsType)  { $payload['livestock_type'] = $lsType; }
+        if ($hasTypeCol) { $payload['type']           = $lsType; }
+        if ($hasQty)     { $payload['quantity']       = $qty; }
 
         \App\Models\Livestock::create($payload);
     }
