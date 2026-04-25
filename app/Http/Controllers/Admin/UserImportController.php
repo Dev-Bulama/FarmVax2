@@ -236,7 +236,7 @@ class UserImportController extends Controller
                         // For existing farmers, add livestock to their existing records instead of skipping
                         if ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
                             $lsType = strtolower($data['livestock_type']);
-                            $qty    = max(1, (int) ($data['livestock_count'] ?? 1));
+                            $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
                             try {
                                 $existing = \App\Models\Livestock::where('user_id', $existingUser->id)
                                     ->where('livestock_type', $lsType)
@@ -304,7 +304,7 @@ class UserImportController extends Controller
                         ]);
                     } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
                         $lsType = strtolower($data['livestock_type']);
-                        $qty    = max(1, (int) ($data['livestock_count'] ?? 1));
+                        $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
                         try {
                             $existing = \App\Models\Livestock::where('user_id', $user->id)
                                 ->where('livestock_type', $lsType)
@@ -388,6 +388,32 @@ class UserImportController extends Controller
             'total'            => $import->total_records,
             'progress_percent' => $import->success_rate,
         ]);
+    }
+
+    /**
+     * Parse a livestock quantity value that may be a single number or a
+     * comma/slash/space-separated list (e.g. "20,9,3" → 32).
+     */
+    protected function parseQuantity($value): int
+    {
+        if ($value === null || $value === '') {
+            return 1;
+        }
+
+        $str = (string) $value;
+
+        // Split on commas, semicolons, slashes, pipes, or whitespace
+        $parts = preg_split('/[\s,;\/|]+/', $str);
+
+        $total = 0;
+        foreach ($parts as $part) {
+            $num = trim($part);
+            if (is_numeric($num)) {
+                $total += (int) $num;
+            }
+        }
+
+        return max(1, $total);
     }
 
     /**

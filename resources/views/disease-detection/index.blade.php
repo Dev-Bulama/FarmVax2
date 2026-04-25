@@ -1,4 +1,14 @@
-@extends('layouts.farmer')
+@php
+    $role = auth()->user()->role ?? 'farmer';
+    $layout = match($role) {
+        'admin'                      => 'layouts.admin',
+        'volunteer'                  => 'layouts.volunteer',
+        'animal_health_professional' => 'layouts.professional',
+        'individual'                 => 'layouts.individual',
+        default                      => 'layouts.farmer',
+    };
+@endphp
+@extends($layout)
 @section('title', 'AI Disease Scans')
 @section('content')
 <div class="p-6 max-w-5xl mx-auto">

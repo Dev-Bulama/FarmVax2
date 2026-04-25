@@ -80,6 +80,14 @@
                     My Profile
                 </a>
 
+                <!-- Disease Scanner -->
+                <a href="{{ route('disease-detection.index') }}" class="{{ request()->routeIs('disease-detection.*') ? 'bg-green-900' : '' }} text-green-100 hover:bg-green-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                    <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l3 3m0 0l3-3m-3 3V8"/>
+                    </svg>
+                    Disease Scanner
+                </a>
+
             </div>
         </nav>
 

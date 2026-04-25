@@ -1,4 +1,14 @@
-@extends('layouts.farmer')
+@php
+    $role = auth()->user()->role ?? 'farmer';
+    $layout = match($role) {
+        'admin'                      => 'layouts.admin',
+        'volunteer'                  => 'layouts.volunteer',
+        'animal_health_professional' => 'layouts.professional',
+        'individual'                 => 'layouts.individual',
+        default                      => 'layouts.farmer',
+    };
+@endphp
+@extends($layout)
 @section('title', 'Scan Results')
 @section('content')
 <div class="p-6 max-w-5xl mx-auto">
@@ -150,10 +160,17 @@
                     <p class="font-bold text-blue-800">Need expert advice?</p>
                     <p class="text-sm text-blue-600">Request a live video consultation with a veterinarian.</p>
                 </div>
+                @if(\Illuminate\Support\Facades\Route::has($role . '.telemedicine.create'))
+                <a href="{{ route($role . '.telemedicine.create') }}"
+                   class="ml-4 px-4 py-2 bg-blue-600 text-white font-bold rounded-lg whitespace-nowrap">
+                    📹 Book Vet Call
+                </a>
+                @elseif(\Illuminate\Support\Facades\Route::has('farmer.telemedicine.create'))
                 <a href="{{ route('farmer.telemedicine.create') }}"
                    class="ml-4 px-4 py-2 bg-blue-600 text-white font-bold rounded-lg whitespace-nowrap">
                     📹 Book Vet Call
                 </a>
+                @endif
             </div>
 
             @endif

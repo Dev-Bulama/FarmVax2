@@ -172,6 +172,13 @@
                         </svg>
                         Telemedicine
                     </a>
+                    <a href="{{ route('admin.disease-detection.index') }}"
+                        class="flex items-center px-3 py-2 text-sm text-white rounded-md hover:bg-white/10 transition {{ request()->routeIs('admin.disease-detection.*') ? 'bg-white/10' : '' }}">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l3 3m0 0l3-3m-3 3V8"/>
+                        </svg>
+                        Disease Scanner
+                    </a>
                 </div>
             </div>
 
@@ -318,6 +325,9 @@
 </a>
         <a href="{{ route('admin.settings.professional-types') }}" class="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition rounded-lg">
             Professional Types
+        </a>
+        <a href="{{ route('admin.settings.telemedicine') }}" class="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition rounded-lg {{ request()->routeIs('admin.settings.telemedicine') ? 'text-white bg-white/10' : '' }}">
+            Telemedicine
         </a>
     </div>
 </div>

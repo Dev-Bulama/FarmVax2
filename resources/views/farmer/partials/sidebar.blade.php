@@ -132,6 +132,14 @@
                 @endif
             </a> --> 
 
+            <!-- Disease Scanner -->
+            <a href="{{ route('disease-detection.index') }}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all {{ request()->routeIs('disease-detection.*') ? 'bg-green-700 text-white shadow-lg' : 'text-green-100 hover:bg-green-700/50 hover:text-white' }}">
+                <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l3 3m0 0l3-3m-3 3V8"/>
+                </svg>
+                <span>Disease Scanner</span>
+            </a>
+
             <!-- Divider -->
             <div class="pt-2 pb-2">
                 <div class="border-t border-green-700"></div>

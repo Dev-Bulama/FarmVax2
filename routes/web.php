@@ -358,6 +358,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/settings/service-areas/{id}', [SettingsController::class, 'deleteServiceArea'])->name('settings.service-areas.delete');
 Route::get('/settings/general', [SettingsController::class, 'general'])->name('settings.general');
 Route::put('/settings/general', [SettingsController::class, 'updateGeneral'])->name('settings.general.update');
+Route::get('/settings/telemedicine', [SettingsController::class, 'telemedicine'])->name('settings.telemedicine');
+Route::put('/settings/telemedicine', [SettingsController::class, 'updateTelemedicine'])->name('settings.telemedicine.update');
    
 // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
