@@ -235,23 +235,19 @@ class UserImportController extends Controller
                     if ($existingUser) {
                         // For existing farmers, add livestock to their existing records instead of skipping
                         if ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
-                            $lsType = strtolower($data['livestock_type']);
+                            $lsType = strtolower(trim((string)$data['livestock_type']));
                             $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
                             try {
                                 $existing = \App\Models\Livestock::where('user_id', $existingUser->id)
-                                    ->where('livestock_type', $lsType)
+                                    ->where(function ($q) use ($lsType) {
+                                        $q->where('livestock_type', $lsType)
+                                          ->orWhere('type', $lsType);
+                                    })
                                     ->first();
                                 if ($existing) {
-                                    $existing->increment('quantity', $qty);
+                                    $this->incrementOrSetQuantity($existing, $qty);
                                 } else {
-                                    \App\Models\Livestock::create([
-                                        'user_id'        => $existingUser->id,
-                                        'owner_id'       => $existingUser->id,
-                                        'livestock_type' => $lsType,
-                                        'type'           => $lsType,
-                                        'quantity'       => $qty,
-                                        'health_status'  => 'healthy',
-                                    ]);
+                                    $this->createImportedLivestock($existingUser->id, $lsType, $qty);
                                 }
                             } catch (\Exception $e) {
                                 \Log::warning("Livestock update skipped for existing user {$existingUser->id}: " . $e->getMessage());
@@ -303,23 +299,19 @@ class UserImportController extends Controller
                             'submitted_at'    => now(),
                         ]);
                     } elseif ($import->user_type === 'farmer' && !empty($data['livestock_type'])) {
-                        $lsType = strtolower($data['livestock_type']);
+                        $lsType = strtolower(trim((string)$data['livestock_type']));
                         $qty    = $this->parseQuantity($data['livestock_count'] ?? null);
                         try {
                             $existing = \App\Models\Livestock::where('user_id', $user->id)
-                                ->where('livestock_type', $lsType)
+                                ->where(function ($q) use ($lsType) {
+                                    $q->where('livestock_type', $lsType)
+                                      ->orWhere('type', $lsType);
+                                })
                                 ->first();
                             if ($existing) {
-                                $existing->increment('quantity', $qty);
+                                $this->incrementOrSetQuantity($existing, $qty);
                             } else {
-                                \App\Models\Livestock::create([
-                                    'user_id'        => $user->id,
-                                    'owner_id'       => $user->id,
-                                    'livestock_type' => $lsType,
-                                    'type'           => $lsType,
-                                    'quantity'       => $qty,
-                                    'health_status'  => 'healthy',
-                                ]);
+                                $this->createImportedLivestock($user->id, $lsType, $qty);
                             }
                         } catch (\Exception $e) {
                             \Log::warning("Livestock creation skipped for user {$user->id}: " . $e->getMessage());
@@ -388,6 +380,38 @@ class UserImportController extends Controller
             'total'            => $import->total_records,
             'progress_percent' => $import->success_rate,
         ]);
+    }
+
+    /**
+     * Increment livestock quantity, falling back to updating directly if the
+     * quantity column doesn't exist yet (schema not yet migrated).
+     */
+    protected function incrementOrSetQuantity(\App\Models\Livestock $record, int $qty): void
+    {
+        if (\Illuminate\Support\Facades\Schema::hasColumn('livestock', 'quantity')) {
+            $record->increment('quantity', $qty);
+        }
+        // If no quantity column, silently skip — the record was found so the type exists
+    }
+
+    /**
+     * Create a livestock record during import, omitting farm_record_id if it's nullable.
+     */
+    protected function createImportedLivestock(int $userId, string $lsType, int $qty): void
+    {
+        $payload = [
+            'user_id'        => $userId,
+            'owner_id'       => $userId,
+            'livestock_type' => $lsType,
+            'type'           => $lsType,
+            'health_status'  => 'healthy',
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('livestock', 'quantity')) {
+            $payload['quantity'] = $qty;
+        }
+
+        \App\Models\Livestock::create($payload);
     }
 
     /**

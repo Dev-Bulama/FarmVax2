@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\TelemedicineRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -48,7 +49,9 @@ class TelemedicineController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.telemedicine.show', compact('req', 'vets'));
+        $telemedicineProvider = Setting::get('telemedicine_provider', 'webrtc');
+
+        return view('admin.telemedicine.show', compact('req', 'vets', 'telemedicineProvider'));
     }
 
     public function assign(Request $request, $id)

@@ -103,8 +103,11 @@ class TelemedicineController extends Controller
 
         if ($req->status === 'assigned') {
             $req->update(['status' => 'in_progress', 'started_at' => now()]);
+            // Clear any stale signals from a previous session for this room
+            \App\Models\TelemedicineSignal::purgeRoom($req->room_code);
         }
 
-        return view('farmer.telemedicine.room', compact('req'));
+        $joinedAt = now()->timestamp;
+        return view('farmer.telemedicine.room', compact('req', 'joinedAt'));
     }
 }

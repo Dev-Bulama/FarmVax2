@@ -58,7 +58,7 @@
 
         <div class="space-y-4">
             {{-- Assign Vet --}}
-            @if(in_array($req->status, ['pending', 'assigned']))
+            @if(!in_array($req->status, ['completed', 'cancelled']))
             <div class="bg-white rounded-xl shadow p-5">
                 <h3 class="font-bold text-gray-700 mb-3">Assign Veterinarian</h3>
                 <form action="{{ route('admin.telemedicine.assign', $req->id) }}" method="POST">
@@ -85,10 +85,26 @@
             </form>
             @endif
 
-            {{-- Jitsi Link --}}
+            {{-- Video Room Link (provider-aware) --}}
             <div class="bg-gray-50 rounded-xl p-4 text-sm">
-                <p class="font-semibold text-gray-600 mb-1">Video Room Link</p>
-                <a href="{{ $req->jitsi_url }}" target="_blank" class="text-blue-600 break-all hover:underline">{{ $req->jitsi_url }}</a>
+                <p class="font-semibold text-gray-600 mb-2">Video Room</p>
+                @if($telemedicineProvider === 'jitsi')
+                    @php
+                        $jitsiDomain = \App\Models\Setting::get('jitsi_domain', 'meet.jit.si');
+                        $jitsiUrl = 'https://' . $jitsiDomain . '/' . $req->room_code
+                            . '#config.requireDisplayName=false'
+                            . '&config.prejoinPageEnabled=false'
+                            . '&config.startWithoutInteraction=true'
+                            . '&config.enableWelcomePage=false'
+                            . '&config.disableDeepLinking=true';
+                    @endphp
+                    <p class="text-xs text-gray-500 mb-1">Jitsi Meet</p>
+                    <a href="{{ $jitsiUrl }}" target="_blank" class="text-blue-600 break-all hover:underline text-xs">{{ $jitsiUrl }}</a>
+                @else
+                    <p class="text-xs text-gray-500 mb-1">Built-in WebRTC &mdash; Room Code</p>
+                    <span class="font-mono text-blue-700 font-bold">{{ $req->room_code }}</span>
+                    <p class="text-xs text-gray-400 mt-1">Participants join via their dashboard.</p>
+                @endif
             </div>
         </div>
     </div>
