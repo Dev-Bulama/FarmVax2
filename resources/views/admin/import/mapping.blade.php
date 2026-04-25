@@ -448,6 +448,13 @@
                     body: JSON.stringify({ start_row: startRow, chunk_size: CHUNK }),
                 });
                 chunk = await res.json();
+                console.log('[Import chunk rows ' + startRow + '–' + (startRow + CHUNK - 1) + ']', chunk);
+                if (chunk.livestock_debug) {
+                    const d = chunk.livestock_debug;
+                    console.log('[Livestock] schema:', d.schema, '| created:', d.created, '| incremented:', d.incremented, '| skipped:', d.skipped);
+                    if (d.samples.length) console.log('[Livestock samples]', d.samples);
+                    if (d.errors.length)  console.warn('[Livestock errors]',  d.errors);
+                }
                 if (!res.ok) throw new Error(chunk.error || chunk.message || 'Chunk failed.');
             } catch (err) {
                 showError('Error at row ' + startRow + ': ' + err.message);
