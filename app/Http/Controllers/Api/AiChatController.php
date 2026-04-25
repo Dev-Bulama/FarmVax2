@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\EmailService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class AiChatController extends Controller
 {
@@ -253,19 +254,29 @@ class AiChatController extends Controller
     {
         $userId = auth()->id();
 
-        // Use 'status' column (always present) rather than 'is_active' (may be missing on older installs)
-        $conversation = ChatbotConversation::where('user_id', $userId)
-            ->where('status', 'active')
-            ->latest()
-            ->first();
+        // Detect which active-flag column the table actually has
+        $hasStatus   = Schema::hasColumn('chatbot_conversations', 'status');
+        $hasIsActive = Schema::hasColumn('chatbot_conversations', 'is_active');
+
+        $query = ChatbotConversation::where('user_id', $userId);
+
+        if ($hasStatus) {
+            $query->where('status', 'active');
+        } elseif ($hasIsActive) {
+            $query->where('is_active', true);
+        }
+
+        $conversation = $query->latest()->first();
 
         if (!$conversation) {
-            $conversation = ChatbotConversation::create([
+            $payload = [
                 'user_id'    => $userId,
                 'session_id' => session()->getId(),
-                'status'     => 'active',
-                'is_active'  => true,
-            ]);
+            ];
+            if ($hasStatus)   { $payload['status']    = 'active'; }
+            if ($hasIsActive) { $payload['is_active'] = true; }
+
+            $conversation = ChatbotConversation::create($payload);
         }
 
         return $conversation;

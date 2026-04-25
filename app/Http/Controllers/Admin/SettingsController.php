@@ -458,4 +458,25 @@ public function testEmail(Request $request)
         ], 500);
     }
 }
+
+public function telemedicine()
+{
+    $provider    = Setting::get('telemedicine_provider', 'custom');
+    $jitsiDomain = Setting::get('jitsi_domain', 'meet.jit.si');
+    return view('admin.settings.telemedicine', compact('provider', 'jitsiDomain'));
+}
+
+public function updateTelemedicine(Request $request)
+{
+    $validated = $request->validate([
+        'telemedicine_provider' => 'required|in:custom,jitsi',
+        'jitsi_domain'          => 'nullable|string|max:255',
+    ]);
+
+    Setting::set('telemedicine_provider', $validated['telemedicine_provider'], 'string', 'telemedicine');
+    Setting::set('jitsi_domain', $validated['jitsi_domain'] ?? 'meet.jit.si', 'string', 'telemedicine');
+
+    return redirect()->route('admin.settings.telemedicine')
+        ->with('success', 'Telemedicine settings updated successfully.');
+}
 }
