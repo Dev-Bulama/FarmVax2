@@ -757,6 +757,7 @@ Real‑time vaccine and outbreak notifications for farmers and veterinary profes
             });
         });
     </script>
+@include('partials.floating-scanner-bubble')
 @include('partials.chatbot-bubble')
 
 </body>
