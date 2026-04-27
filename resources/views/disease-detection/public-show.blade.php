@@ -77,6 +77,19 @@
         <p class="text-gray-500 mt-1 text-sm">AI-powered livestock health analysis · {{ $scan->created_at->format('d M Y, H:i') }}</p>
     </div>
 
+    @php
+        // Parse poor-image prefix stored in analysis_result
+        $rawAnalysis  = $scan->analysis_result ?? '';
+        $imageWarning = null;
+        $analysisText = $rawAnalysis;
+        if (str_starts_with($rawAnalysis, '[POOR_IMAGE:')) {
+            preg_match('/\[POOR_IMAGE: (.*?)\]/', $rawAnalysis, $pwm);
+            $imageWarning = $pwm[1] ?? 'Image quality is low — results may be less accurate.';
+            $analysisText = trim(substr($rawAnalysis, strpos($rawAnalysis, '] ') + 2));
+        }
+        $isNotAnimal = ($scan->animal_type === 'not_animal');
+    @endphp
+
     @if($scan->status === 'processing')
     {{-- Processing state --}}
     <div class="fade-up bg-blue-50 border border-blue-200 rounded-2xl p-10 text-center">
@@ -97,14 +110,66 @@
     <div class="fade-up bg-red-50 border border-red-200 rounded-2xl p-10 text-center">
         <div class="text-5xl mb-4">❌</div>
         <h2 class="text-xl font-bold text-red-800 mb-2">Analysis Could Not Be Completed</h2>
-        <p class="text-red-600 mb-2">{{ $scan->analysis_result }}</p>
-        <p class="text-sm text-gray-500">Please try again or consult a veterinarian directly.</p>
+        <p class="text-red-600 mb-2">{{ $analysisText }}</p>
+        <p class="text-sm text-gray-500 mb-5">Please try again with a clear, well-lit photo of the animal.</p>
+        <a href="{{ route('home') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-[#11455b] text-[#11455b] font-bold rounded-xl hover:bg-[#11455b] hover:text-white transition text-sm">
+            Try Again
+        </a>
+    </div>
+
+    @elseif($isNotAnimal)
+    {{-- ── Not an animal ───────────────────────────────────────────── --}}
+    <div class="fade-up-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="flex flex-col sm:flex-row">
+            <div class="sm:w-48 sm:shrink-0">
+                <img src="{{ asset('storage/' . $scan->image_path) }}"
+                     alt="Uploaded image"
+                     class="w-full h-48 sm:h-full object-cover"
+                     onerror="this.src='https://placehold.co/192x192/e5e7eb/9ca3af?text=No+Image'">
+            </div>
+            <div class="flex-1 p-5 flex flex-col justify-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 w-fit rounded-full text-sm font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                    ⚠️ No Animal Detected
+                </span>
+                <p class="text-xs text-gray-400">Scanned {{ $scan->created_at->diffForHumans() }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="fade-up-3 bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center space-y-4">
+        <div class="text-5xl">🐄</div>
+        <h2 class="text-xl font-bold text-amber-800">No Animal Found in This Image</h2>
+        <p class="text-amber-700 text-sm leading-relaxed max-w-md mx-auto">{{ $analysisText }}</p>
+        <div class="bg-white rounded-xl p-4 text-left max-w-sm mx-auto border border-amber-100 space-y-2 text-sm text-gray-600">
+            <p class="font-semibold text-gray-800 mb-1">Tips for a good scan:</p>
+            <p>📸 Take a close-up photo of the animal</p>
+            <p>💡 Ensure good lighting — avoid shadows</p>
+            <p>🔍 The animal should fill most of the frame</p>
+            <p>🐾 Works best with: cattle, goat, sheep, pig, poultry, horse</p>
+        </div>
+        <a href="{{ route('home') }}"
+           class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#11455b] text-white font-bold rounded-xl hover:opacity-90 transition text-sm">
+            Try Again with a Better Photo
+        </a>
     </div>
 
     @else
     {{-- ================================================================
          COMPLETED — show results
          ================================================================ --}}
+
+    {{-- Poor image quality banner --}}
+    @if($imageWarning)
+    <div class="fade-up bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+        <span class="text-2xl shrink-0">📷</span>
+        <div>
+            <p class="font-bold text-amber-800 text-sm">Low Image Quality Detected</p>
+            <p class="text-amber-700 text-sm mt-0.5">{{ $imageWarning }}</p>
+            <p class="text-amber-600 text-xs mt-1">For best results, use a clear, well-lit close-up photo where the animal fills the frame.</p>
+        </div>
+    </div>
+    @endif
 
     {{-- Animal summary card --}}
     <div class="fade-up-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -120,7 +185,7 @@
                     <div class="flex items-start justify-between gap-3 flex-wrap">
                         <div>
                             <p class="text-xs uppercase tracking-widest text-gray-400 mb-0.5">Animal Type</p>
-                            <p class="text-2xl font-black" style="color:#11455b;">{{ ucfirst($scan->animal_type ?? 'Unknown') }}</p>
+                            <p class="text-2xl font-black" style="color:#11455b;">{{ ucwords(str_replace('_', ' ', $scan->animal_type ?? 'Unknown')) }}</p>
                         </div>
                         @if($scan->is_sick)
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold bg-red-100 text-red-700 border border-red-200">
@@ -250,10 +315,10 @@
         </div>
 
         {{-- AI Summary --}}
-        @if($scan->analysis_result)
+        @if($analysisText)
         <div class="p-4 {{ $scan->is_sick ? 'bg-red-50 border border-red-100' : 'bg-green-50 border border-green-100' }} rounded-xl">
             <p class="text-sm font-semibold {{ $scan->is_sick ? 'text-red-700' : 'text-green-700' }} mb-1">AI Summary</p>
-            <p class="text-gray-800 text-sm leading-relaxed">{{ $scan->analysis_result }}</p>
+            <p class="text-gray-800 text-sm leading-relaxed">{{ $analysisText }}</p>
         </div>
         @endif
 
@@ -432,7 +497,9 @@
     </div>
     @endif
 
-    @endif {{-- end status check --}}
+    @endif {{-- end auth check --}}
+
+    @endif {{-- end status/type check --}}
 
 </main>
 

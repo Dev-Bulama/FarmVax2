@@ -50,12 +50,12 @@ class DiseaseDetectionService
                 return $this->fallbackAnalysis($detection, 'Image file not found on disk.');
             }
 
-            $imageData  = base64_encode(file_get_contents($imagePath));
-            $mimeType   = mime_content_type($imagePath);
-            $animalType = $detection->animal_type ?? 'livestock';
-            $symptoms   = $detection->symptoms_reported ?? 'No symptoms reported by the user.';
+            $imageData = base64_encode(file_get_contents($imagePath));
+            $mimeType  = mime_content_type($imagePath);
+            $symptoms  = $detection->symptoms_reported ?? 'No symptoms reported by the user.';
+            $hintType  = $detection->animal_type ?? '';
 
-            $prompt = $this->buildPrompt($animalType, $symptoms);
+            $prompt = $this->buildPrompt($hintType, $symptoms);
 
             $result = $this->provider === 'openai'
                 ? $this->callOpenAI($imageData, $mimeType, $prompt)
@@ -65,12 +65,41 @@ class DiseaseDetectionService
                 return $this->fallbackAnalysis($detection, 'Could not parse AI response as JSON.');
             }
 
+            // ── Not an animal ─────────────────────────────────────────────
+            if (isset($result['is_animal']) && $result['is_animal'] === false) {
+                $detection->update([
+                    'status'              => 'completed',
+                    'animal_type'         => 'not_animal',
+                    'is_sick'             => false,
+                    'confidence_score'    => 95,
+                    'urgency_level'       => 'low',
+                    'analysis_result'     => $result['not_animal_reason'] ?? 'The image does not appear to contain a livestock animal.',
+                    'detected_conditions' => [],
+                    'recommendations'     => "Please upload a clear, close-up photo of the animal you want to scan.\nMake sure the animal fills most of the frame with good lighting.",
+                    'ai_model'            => $this->provider . '/' . $this->model,
+                ]);
+                return $detection->fresh();
+            }
+
+            // ── Image quality prefix (stored in analysis_result) ──────────
+            $qualityPrefix = '';
+            $imageQuality  = $result['image_quality'] ?? 'good';
+            if (in_array($imageQuality, ['poor', 'fair'])) {
+                $note          = $result['image_quality_note'] ?? 'Image quality is low — results may be less accurate.';
+                $qualityPrefix = '[POOR_IMAGE: ' . $note . '] ';
+            }
+
+            // ── Detected animal type (auto-detected by AI) ────────────────
+            $detectedType = trim($result['detected_animal_type'] ?? '');
+            $animalType   = $detectedType ?: ($hintType ?: 'livestock');
+
             $detection->update([
                 'status'              => 'completed',
+                'animal_type'         => $animalType,
                 'is_sick'             => (bool) ($result['is_sick'] ?? false),
                 'confidence_score'    => min(100, max(0, (float) ($result['confidence_score'] ?? 75))),
                 'urgency_level'       => $result['urgency_level'] ?? 'low',
-                'analysis_result'     => $result['summary'] ?? '',
+                'analysis_result'     => $qualityPrefix . ($result['summary'] ?? ''),
                 'detected_conditions' => $result['detected_conditions'] ?? [],
                 'recommendations'     => implode("\n", (array) ($result['recommendations'] ?? [])),
                 'ai_model'            => $this->provider . '/' . $this->model,
@@ -144,54 +173,90 @@ class DiseaseDetectionService
 
     // ── Shared helpers ───────────────────────────────────────────────────────
 
-    protected function buildPrompt(string $animalType, string $symptoms): string
+    protected function buildPrompt(string $hintType, string $symptoms): string
     {
+        $hintLine = $hintType
+            ? "User-provided animal type hint (use only if image confirms it): {$hintType}"
+            : "Animal type hint: not provided — auto-detect from the image.";
+
         return <<<PROMPT
-You are a highly trained veterinary AI assistant specialised in diagnosing livestock diseases from photographic evidence. You have expertise equivalent to a board-certified large-animal veterinarian with 20+ years of experience across cattle, goat, sheep, pig, poultry, and other common farm animals.
+You are a world-class veterinary AI assistant with deep expertise in diagnosing diseases of livestock and farm animals (cattle, goat, sheep, pig, poultry, horse, rabbit, dog, cat, etc.).
 
-Carefully examine the provided image of a {$animalType}.
+STEP 1 — Validate the image:
+• Is there a real animal in this image? If not (e.g. it is a person, object, scenery, or unclear image), set "is_animal" to false and explain in "not_animal_reason". Do NOT attempt a disease diagnosis.
+• Rate image quality: "good" (clear, well-lit, animal visible), "fair" (slightly blurry or dark but usable), or "poor" (too blurry, dark, or distant for reliable analysis).
 
-User-reported symptoms / observations: {$symptoms}
+STEP 2 — If an animal is present:
+• AUTO-DETECT the exact species/breed (e.g. "cattle", "goat", "sheep", "pig", "poultry", "horse", "rabbit"). Do not just say "livestock".
+• Identify ALL visible signs of disease, injury, malnutrition, or abnormality.
+• List up to 5 most likely diagnoses with probability percentages summing to 100%.
+• Assess urgency and give clear farmer-friendly recommendations.
 
-Your task:
-1. Identify ALL visible signs of disease, injury, malnutrition, or abnormality in the image.
-2. List the most likely diagnoses (up to 5) with probability percentages that sum to 100%.
-3. Assess urgency (low / medium / high / critical).
-4. Provide clear, actionable recommendations for the farmer.
-5. State your overall confidence in this assessment.
+{$hintLine}
+User-reported symptoms: {$symptoms}
 
-Respond ONLY with valid JSON in exactly this structure:
+CRITICAL: Your response must be ONLY valid JSON — no markdown, no code fences, no explanatory text before or after. Start immediately with { and end with }.
+
+Use exactly this structure:
 {
-  "is_sick": true or false,
-  "confidence_score": <number 0-100>,
-  "urgency_level": "low" | "medium" | "high" | "critical",
-  "summary": "<2-3 sentence plain-language summary>",
+  "is_animal": true,
+  "not_animal_reason": null,
+  "image_quality": "good",
+  "image_quality_note": null,
+  "detected_animal_type": "<auto-detected species, e.g. cattle>",
+  "is_sick": true,
+  "confidence_score": 85,
+  "urgency_level": "medium",
+  "summary": "<2-3 sentence plain-language summary for the farmer>",
   "detected_conditions": [
     {
-      "name": "<disease or condition name>",
-      "probability": <0-100>,
-      "severity": "mild" | "moderate" | "severe",
+      "name": "<condition name>",
+      "probability": 60,
+      "severity": "moderate",
       "description": "<brief description>"
     }
   ],
   "visible_symptoms": ["<symptom 1>", "<symptom 2>"],
   "recommendations": [
-    "<actionable step 1>",
-    "<actionable step 2>",
-    "<actionable step 3>"
+    "<clear actionable step 1>",
+    "<clear actionable step 2>",
+    "<clear actionable step 3>"
   ],
-  "requires_vet": true or false,
-  "isolation_recommended": true or false
+  "requires_vet": true,
+  "isolation_recommended": false
 }
 PROMPT;
     }
 
     protected function parseJson(string $text): ?array
     {
-        $text = preg_replace('/^```(?:json)?\s*/i', '', trim($text));
-        $text = preg_replace('/\s*```$/', '', $text);
+        $text = trim($text);
+
+        // 1. Try direct decode (ideal: model returned pure JSON)
         $decoded = json_decode($text, true);
-        return is_array($decoded) ? $decoded : null;
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        // 2. Strip markdown code fences and retry
+        $stripped = preg_replace('/```(?:json)?\s*([\s\S]*?)\s*```/i', '$1', $text);
+        $decoded  = json_decode(trim($stripped), true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        // 3. Extract the outermost JSON object from anywhere in the text
+        $start = strpos($text, '{');
+        $end   = strrpos($text, '}');
+        if ($start !== false && $end !== false && $end > $start) {
+            $decoded = json_decode(substr($text, $start, $end - $start + 1), true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        Log::warning('DiseaseDetection: could not parse JSON', ['raw' => substr($text, 0, 500)]);
+        return null;
     }
 
     protected function fallbackAnalysis(DiseaseDetection $detection, string $reason): DiseaseDetection

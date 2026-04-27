@@ -152,6 +152,7 @@
                     <p class="text-sm font-semibold text-gray-700">Drop your image here</p>
                     <p class="text-xs text-gray-400 mt-1">or <span class="text-[#2FCB6E] font-semibold underline underline-offset-2">browse files</span></p>
                     <p class="text-xs text-gray-400 mt-2">Supports JPG, PNG, WEBP · Max 10 MB</p>
+                    <p class="text-[11px] text-amber-600 mt-2 font-medium">📸 Use a clear, well-lit close-up of the animal for best results</p>
                 </div>
 
                 <input type="file"
