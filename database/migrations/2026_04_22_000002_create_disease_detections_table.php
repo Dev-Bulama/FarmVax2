@@ -11,7 +11,7 @@ return new class extends Migration
         if (Schema::hasTable('disease_detections')) { return; }
         Schema::create('disease_detections', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('user_id')->nullable();   // nullable: allows public/guest scans
             $table->unsignedBigInteger('livestock_id')->nullable();
             $table->string('image_path');                            // stored path
             $table->string('animal_type', 50)->nullable();           // cattle, goat, etc.
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('livestock_id')->references('id')->on('livestock')->onDelete('set null');
             $table->index(['user_id', 'created_at']);
         });

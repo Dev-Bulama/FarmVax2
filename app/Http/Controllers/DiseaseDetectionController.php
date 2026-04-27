@@ -62,6 +62,37 @@ class DiseaseDetectionController extends Controller
             ->with('success', 'Analysis complete!');
     }
 
+    /**
+     * Public scan endpoint — no authentication required.
+     * Called via fetch() from the floating scanner bubble on the landing page.
+     * Returns JSON { success, redirect } so the browser can navigate to results.
+     */
+    public function publicStore(Request $request)
+    {
+        $request->validate([
+            'image'             => 'required|image|mimes:jpeg,jpg,png,webp|max:10240',
+            'animal_type'       => 'nullable|string|max:50',
+            'symptoms_reported' => 'nullable|string|max:1000',
+        ]);
+
+        $imagePath = $request->file('image')->store('disease-scans', 'public');
+
+        $detection = DiseaseDetection::create([
+            'user_id'           => Auth::id(),   // null for guests, user ID if logged in
+            'image_path'        => $imagePath,
+            'animal_type'       => $request->input('animal_type', 'livestock'),
+            'symptoms_reported' => $request->input('symptoms_reported'),
+            'status'            => 'processing',
+        ]);
+
+        $this->service->analyse($detection);
+
+        return response()->json([
+            'success'  => true,
+            'redirect' => route('disease-detection.public', $detection->id),
+        ]);
+    }
+
     public function publicShow($id)
     {
         $scan = DiseaseDetection::with('livestock')->findOrFail($id);

@@ -894,6 +894,11 @@ Route::middleware(['auth'])->prefix('disease-detection')->name('disease-detectio
 Route::get('/results/{id}', [\App\Http\Controllers\DiseaseDetectionController::class, 'publicShow'])
     ->name('disease-detection.public');
 
+// Public scan submission — called via fetch() from the landing-page bubble.
+// No auth required; user_id is null for guests.
+Route::post('/public-scan', [\App\Http\Controllers\DiseaseDetectionController::class, 'publicStore'])
+    ->name('disease-detection.public-store');
+
 /*
 |--------------------------------------------------------------------------
 | LEGACY ROUTE REDIRECTS

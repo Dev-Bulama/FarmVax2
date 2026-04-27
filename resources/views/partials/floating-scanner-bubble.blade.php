@@ -271,23 +271,23 @@
 
     {{-- ── Footer Action ────────────────────────────────────────── --}}
     <div class="px-5 py-4 border-t border-gray-100 bg-white">
-        <a id="scanner-analyze-btn"
-           href="{{ route('disease-detection.create') }}"
-           class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl
-                  bg-gradient-to-r from-[#2FCB6E] to-[#11455B]
-                  text-white text-sm font-bold tracking-wide
-                  shadow-md hover:opacity-90 active:scale-[0.98]
-                  transition-all duration-200
-                  opacity-50 pointer-events-none"
-           id="scanner-analyze-btn">
+        <button type="button"
+                id="scanner-analyze-btn"
+                onclick="runScannerAnalysis()"
+                class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl
+                       bg-gradient-to-r from-[#2FCB6E] to-[#11455B]
+                       text-white text-sm font-bold tracking-wide
+                       shadow-md hover:opacity-90 active:scale-[0.98]
+                       transition-all duration-200
+                       opacity-50 pointer-events-none">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            Analyze Disease
-        </a>
-        <p class="text-[11px] text-center text-gray-400 mt-2">
+            <span id="scanner-analyze-label">Analyze Disease</span>
+        </button>
+        <p id="scanner-footer-hint" class="text-[11px] text-center text-gray-400 mt-2">
             Select or capture an image of the affected animal to continue
         </p>
     </div>
@@ -380,6 +380,7 @@
     let scannerCurrentTab  = 'upload';
     let scannerStream      = null;
     let scannerHasImage    = false;
+    let scannerImageFile   = null;   // the actual File/Blob ready to POST
 
     /* ── open / close ──────────────────────────────────────────── */
     window.openScannerModal = function () {
@@ -485,18 +486,21 @@
         canvas.height = video.videoHeight || 720;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        document.getElementById('scanner-captured-img').src = dataUrl;
-
+        document.getElementById('scanner-captured-img').src = canvas.toDataURL('image/jpeg', 0.85);
         document.getElementById('scanner-camera-live').classList.add('hidden');
         document.getElementById('scanner-captured-preview').classList.remove('hidden');
         stopScannerCamera();
 
-        setScannerImageReady(true);
+        // Convert canvas frame to a real File for POST submission
+        canvas.toBlob(blob => {
+            scannerImageFile = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+            setScannerImageReady(true);
+        }, 'image/jpeg', 0.85);
     };
 
     window.scannerRetakePhoto = function () {
         document.getElementById('scanner-captured-preview').classList.add('hidden');
+        scannerImageFile = null;
         setScannerImageReady(false);
         startScannerCamera();
     };
@@ -513,6 +517,7 @@
 
     function readScannerFile(file) {
         if (!file.type.startsWith('image/')) return;
+        scannerImageFile = file;   // keep the real File for POST
         const reader = new FileReader();
         reader.onload = e => {
             document.getElementById('scanner-preview-img').src = e.target.result;
@@ -529,6 +534,7 @@
         document.getElementById('scanner-file-input').value = '';
         document.getElementById('scanner-upload-preview').classList.add('hidden');
         document.getElementById('scanner-drop-zone').classList.remove('hidden');
+        scannerImageFile = null;
         setScannerImageReady(false);
     };
 
@@ -557,6 +563,99 @@
             btn.classList.add('opacity-50', 'pointer-events-none');
         }
     }
+
+    /* ── analyze: submit image to public endpoint via fetch ──────── */
+    window.runScannerAnalysis = async function () {
+        if (!scannerImageFile) return;
+
+        // ── Show analyzing state inside the modal ──────────────────
+        const body   = document.querySelector('#scanner-modal .scanner-modal-body');
+        const footer = document.querySelector('#scanner-modal .px-5.py-4.border-t');
+        const closeBtn = document.querySelector('#scanner-modal button[onclick="closeScannerModal()"]');
+
+        body.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 text-center gap-4">
+                <div class="relative w-24 h-24">
+                    <div class="absolute inset-0 rounded-full border-4 border-gray-100"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-t-[#2FCB6E] border-r-transparent
+                                border-b-transparent border-l-transparent animate-spin"></div>
+                    <div class="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#11455B]/40
+                                border-b-transparent border-l-transparent animate-spin" style="animation-duration:1.5s"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-3xl">🔬</div>
+                </div>
+                <div>
+                    <p class="text-lg font-bold text-[#11455B]">Analyzing...</p>
+                    <p class="text-sm text-gray-500 mt-1">Please wait while our AI examines the photo</p>
+                </div>
+                <div id="scanner-step-list" class="w-full max-w-[220px] space-y-2 text-left">
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <svg class="w-3.5 h-3.5 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Processing image
+                    </div>
+                    <div id="scanner-step-2" class="flex items-center gap-2 text-xs text-gray-400 opacity-40">
+                        <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0"></div>
+                        Running AI analysis
+                    </div>
+                    <div id="scanner-step-3" class="flex items-center gap-2 text-xs text-gray-400 opacity-40">
+                        <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0"></div>
+                        Generating report
+                    </div>
+                </div>
+            </div>`;
+        footer.innerHTML = '';
+        if (closeBtn) closeBtn.setAttribute('disabled', 'true');
+
+        // Animate the step indicators while waiting for the server
+        setTimeout(() => {
+            const s2 = document.getElementById('scanner-step-2');
+            if (s2) { s2.classList.remove('opacity-40'); s2.querySelector('div').outerHTML = '<svg class="w-3.5 h-3.5 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>'; }
+        }, 1200);
+        setTimeout(() => {
+            const s3 = document.getElementById('scanner-step-3');
+            if (s3) { s3.classList.remove('opacity-40'); s3.querySelector('div').outerHTML = '<svg class="w-3.5 h-3.5 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>'; }
+        }, 2600);
+
+        // ── POST image to the public scan endpoint ─────────────────
+        try {
+            const formData = new FormData();
+            formData.append('image', scannerImageFile, scannerImageFile.name || 'scan.jpg');
+            formData.append('_token', '{{ csrf_token() }}');
+
+            const resp = await fetch('{{ route("disease-detection.public-store") }}', {
+                method: 'POST',
+                body: formData,
+            });
+
+            let data;
+            try { data = await resp.json(); } catch { data = {}; }
+
+            if (resp.ok && data.success && data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                const msg = data.message || data.errors?.image?.[0] || 'Analysis failed. Please try again.';
+                throw new Error(msg);
+            }
+        } catch (err) {
+            // ── Restore modal to a retry-able error state ──────────
+            body.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 text-center gap-3">
+                    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-2xl">❌</div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Analysis failed</p>
+                        <p class="text-xs text-gray-500 mt-1">${err.message}</p>
+                    </div>
+                    <button type="button"
+                            onclick="closeScannerModal()"
+                            class="px-4 py-2 text-sm font-semibold text-[#11455B] border-2 border-[#11455B] rounded-xl hover:bg-[#11455B]/5">
+                        Try again
+                    </button>
+                </div>`;
+            if (closeBtn) closeBtn.removeAttribute('disabled');
+        }
+    };
 
     /* ── keyboard close ─────────────────────────────────────────── */
     document.addEventListener('keydown', e => {
