@@ -75,22 +75,30 @@ class DiseaseDetectionController extends Controller
             'symptoms_reported' => 'nullable|string|max:1000',
         ]);
 
-        $imagePath = $request->file('image')->store('disease-scans', 'public');
+        try {
+            $imagePath = $request->file('image')->store('disease-scans', 'public');
 
-        $detection = DiseaseDetection::create([
-            'user_id'           => Auth::id(),   // null for guests, user ID if logged in
-            'image_path'        => $imagePath,
-            'animal_type'       => $request->input('animal_type', 'livestock'),
-            'symptoms_reported' => $request->input('symptoms_reported'),
-            'status'            => 'processing',
-        ]);
+            $detection = DiseaseDetection::create([
+                'user_id'           => Auth::id(),   // null for guests, user ID if logged in
+                'image_path'        => $imagePath,
+                'animal_type'       => $request->input('animal_type', 'livestock'),
+                'symptoms_reported' => $request->input('symptoms_reported'),
+                'status'            => 'processing',
+            ]);
 
-        $this->service->analyse($detection);
+            $this->service->analyse($detection);
 
-        return response()->json([
-            'success'  => true,
-            'redirect' => route('disease-detection.public', $detection->id),
-        ]);
+            return response()->json([
+                'success'  => true,
+                'redirect' => route('disease-detection.public', $detection->id),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Public scan failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Analysis failed. Please try again.',
+            ], 500);
+        }
     }
 
     public function publicShow($id)
