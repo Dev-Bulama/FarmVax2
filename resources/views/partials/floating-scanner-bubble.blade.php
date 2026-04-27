@@ -568,92 +568,132 @@
     window.runScannerAnalysis = async function () {
         if (!scannerImageFile) return;
 
-        // ── Show analyzing state inside the modal ──────────────────
-        const body   = document.querySelector('#scanner-modal .scanner-modal-body');
-        const footer = document.querySelector('#scanner-modal .px-5.py-4.border-t');
-        const closeBtn = document.querySelector('#scanner-modal button[onclick="closeScannerModal()"]');
+        const body     = document.querySelector('#scanner-modal .scanner-modal-body');
+        const footer   = document.querySelector('#scanner-modal .px-5.py-4.border-t');
+        const closeBtn = document.querySelector('#scanner-modal [aria-label="Close scanner"]');
 
+        // Save full UI state so the user can retry without re-selecting the image
+        const savedBodyHTML   = body.innerHTML;
+        const savedFooterHTML = footer.innerHTML;
+        const savedFile       = scannerImageFile;
+
+        // ── Analyzing overlay ───────────────────────────────────────
         body.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-12 text-center gap-4">
+            <div class="flex flex-col items-center justify-center py-10 text-center gap-5">
                 <div class="relative w-24 h-24">
                     <div class="absolute inset-0 rounded-full border-4 border-gray-100"></div>
-                    <div class="absolute inset-0 rounded-full border-4 border-t-[#2FCB6E] border-r-transparent
-                                border-b-transparent border-l-transparent animate-spin"></div>
-                    <div class="absolute inset-2 rounded-full border-4 border-t-transparent border-r-[#11455B]/40
-                                border-b-transparent border-l-transparent animate-spin" style="animation-duration:1.5s"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-t-[#2FCB6E]
+                                border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+                    <div class="absolute inset-2 rounded-full border-4 border-t-transparent
+                                border-r-[#11455B]/40 border-b-transparent border-l-transparent animate-spin"
+                         style="animation-duration:1.6s"></div>
                     <div class="absolute inset-0 flex items-center justify-center text-3xl">🔬</div>
                 </div>
                 <div>
-                    <p class="text-lg font-bold text-[#11455B]">Analyzing...</p>
-                    <p class="text-sm text-gray-500 mt-1">Please wait while our AI examines the photo</p>
+                    <p class="text-lg font-bold text-[#11455B]" id="sc-title">Analyzing...</p>
+                    <p class="text-sm text-gray-500 mt-1" id="sc-sub">Please wait while our AI examines the photo</p>
                 </div>
-                <div id="scanner-step-list" class="w-full max-w-[220px] space-y-2 text-left">
-                    <div class="flex items-center gap-2 text-xs text-gray-500">
-                        <svg class="w-3.5 h-3.5 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24">
+                <div class="w-full max-w-[240px] space-y-1.5 text-sm">
+                    <div id="sc-s1" class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[#2FCB6E]/10 text-gray-700">
+                        <svg class="w-4 h-4 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                         </svg>
-                        Processing image
+                        <span>Processing image</span>
                     </div>
-                    <div id="scanner-step-2" class="flex items-center gap-2 text-xs text-gray-400 opacity-40">
-                        <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0"></div>
-                        Running AI analysis
+                    <div id="sc-s2" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-400 opacity-40">
+                        <div class="w-4 h-4 rounded-full border-2 border-gray-300 shrink-0"></div>
+                        <span>Running AI analysis</span>
                     </div>
-                    <div id="scanner-step-3" class="flex items-center gap-2 text-xs text-gray-400 opacity-40">
-                        <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-300 shrink-0"></div>
-                        Generating report
+                    <div id="sc-s3" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-400 opacity-40">
+                        <div class="w-4 h-4 rounded-full border-2 border-gray-300 shrink-0"></div>
+                        <span>Generating report</span>
                     </div>
                 </div>
             </div>`;
         footer.innerHTML = '';
         if (closeBtn) closeBtn.setAttribute('disabled', 'true');
 
-        // Animate the step indicators while waiting for the server
-        setTimeout(() => {
-            const s2 = document.getElementById('scanner-step-2');
-            if (s2) { s2.classList.remove('opacity-40'); s2.querySelector('div').outerHTML = '<svg class="w-3.5 h-3.5 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>'; }
-        }, 1200);
-        setTimeout(() => {
-            const s3 = document.getElementById('scanner-step-3');
-            if (s3) { s3.classList.remove('opacity-40'); s3.querySelector('div').outerHTML = '<svg class="w-3.5 h-3.5 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>'; }
-        }, 2600);
+        // Step icons
+        const spinSvg  = '<svg class="w-4 h-4 animate-spin text-[#2FCB6E] shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>';
+        const checkSvg = '<svg class="w-4 h-4 text-[#2FCB6E] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
 
-        // ── POST image to the public scan endpoint ─────────────────
+        function activateStep(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('opacity-40');
+            el.classList.add('bg-[#2FCB6E]/10', 'text-gray-700');
+            const icon = el.querySelector('div, svg');
+            if (icon) icon.outerHTML = spinSvg;
+        }
+        function completeStep(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const icon = el.querySelector('svg');
+            if (icon) icon.outerHTML = checkSvg;
+        }
+
+        const t1 = setTimeout(() => { completeStep('sc-s1'); activateStep('sc-s2'); }, 900);
+        const t2 = setTimeout(() => { completeStep('sc-s2'); activateStep('sc-s3'); }, 2600);
+
+        // ── POST to public scan endpoint ────────────────────────────
         try {
-            const formData = new FormData();
-            formData.append('image', scannerImageFile, scannerImageFile.name || 'scan.jpg');
-            formData.append('_token', '{{ csrf_token() }}');
+            const fd = new FormData();
+            fd.append('image', savedFile, savedFile.name || 'scan.jpg');
+            fd.append('_token', '{{ csrf_token() }}');
 
             const resp = await fetch('{{ route("disease-detection.public-store") }}', {
                 method: 'POST',
-                body: formData,
+                body: fd,
             });
+
+            clearTimeout(t1);
+            clearTimeout(t2);
 
             let data;
             try { data = await resp.json(); } catch { data = {}; }
 
             if (resp.ok && data.success && data.redirect) {
-                window.location.href = data.redirect;
+                // Mark all steps done, then navigate
+                ['sc-s1','sc-s2','sc-s3'].forEach(id => {
+                    completeStep(id);
+                    const el = document.getElementById(id);
+                    if (el) { el.classList.remove('opacity-40'); el.classList.add('bg-[#2FCB6E]/10','text-gray-700'); }
+                });
+                const t = document.getElementById('sc-title');
+                const s = document.getElementById('sc-sub');
+                if (t) t.textContent = 'Done! ✓';
+                if (s) s.textContent = 'Redirecting to your results…';
+                setTimeout(() => { window.location.href = data.redirect; }, 350);
             } else {
-                const msg = data.message || data.errors?.image?.[0] || 'Analysis failed. Please try again.';
+                const msg = data.message
+                    || (data.errors && Object.values(data.errors).flat()[0])
+                    || 'Analysis failed. Please try again.';
                 throw new Error(msg);
             }
         } catch (err) {
-            // ── Restore modal to a retry-able error state ──────────
-            body.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-10 text-center gap-3">
-                    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-2xl">❌</div>
-                    <div>
-                        <p class="font-semibold text-gray-800">Analysis failed</p>
-                        <p class="text-xs text-gray-500 mt-1">${err.message}</p>
-                    </div>
-                    <button type="button"
-                            onclick="closeScannerModal()"
-                            class="px-4 py-2 text-sm font-semibold text-[#11455B] border-2 border-[#11455B] rounded-xl hover:bg-[#11455B]/5">
-                        Try again
-                    </button>
-                </div>`;
+            clearTimeout(t1);
+            clearTimeout(t2);
+
+            // ── Restore the full scanner UI so the user can try again ──
+            body.innerHTML   = savedBodyHTML;
+            footer.innerHTML = savedFooterHTML;
+            scannerImageFile = savedFile;       // keep the image ready
+            setScannerImageReady(true);         // re-enable the Analyze button
             if (closeBtn) closeBtn.removeAttribute('disabled');
+
+            // Show a dismissible error banner above the footer
+            const toast = document.createElement('div');
+            toast.className = 'px-5 pb-2';
+            toast.innerHTML = `
+                <div class="flex items-center justify-between gap-2 px-3 py-2.5
+                             bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                    <span>⚠️ ${err.message}</span>
+                    <button onclick="this.closest('.px-5').remove()"
+                            class="shrink-0 text-red-400 hover:text-red-600 font-bold text-base leading-none">×</button>
+                </div>`;
+            footer.insertAdjacentElement('beforebegin', toast);
+            setTimeout(() => toast.remove(), 8000);
         }
     };
 
