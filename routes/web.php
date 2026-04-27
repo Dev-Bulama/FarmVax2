@@ -889,6 +889,11 @@ Route::middleware(['auth'])->prefix('disease-detection')->name('disease-detectio
     Route::delete('/{id}', [\App\Http\Controllers\DiseaseDetectionController::class, 'destroy'])->name('destroy');
 });
 
+// Public results page — no auth required (Phase 6 & 7)
+// Shows a preview to guests and full results to logged-in users.
+Route::get('/results/{id}', [\App\Http\Controllers\DiseaseDetectionController::class, 'publicShow'])
+    ->name('disease-detection.public');
+
 /*
 |--------------------------------------------------------------------------
 | LEGACY ROUTE REDIRECTS

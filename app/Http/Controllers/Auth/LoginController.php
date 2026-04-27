@@ -42,15 +42,15 @@ class LoginController extends Controller
             $accountStatus = $user->account_status ?? $user->status ?? 'inactive';
             if ($accountStatus !== 'active') {
                 Auth::logout();
-                
+
                 $statusMessages = [
                     'inactive' => 'Your account is inactive. Please contact support.',
                     'suspended' => 'Your account has been suspended. Please contact support.',
                     'banned' => 'Your account has been banned. Please contact support.',
                 ];
-                
+
                 $message = $statusMessages[$accountStatus] ?? 'Your account is not active. Please contact support.';
-                
+
                 throw ValidationException::withMessages([
                     'email' => [$message],
                 ]);
@@ -60,6 +60,16 @@ class LoginController extends Controller
 
             // Clear rate limiter on successful login
             RateLimiter::clear($this->throttleKey($request));
+
+            // Phase 7: if a safe internal redirect URL was passed, honour it
+            $redirectUrl = $request->input('redirect', '');
+            if ($redirectUrl
+                && Str::startsWith($redirectUrl, '/')
+                && !Str::startsWith($redirectUrl, '//')
+                && !Str::contains($redirectUrl, ['javascript:', 'data:'])
+            ) {
+                return redirect($redirectUrl);
+            }
 
             // Redirect based on user role
             return $this->redirectBasedOnRole();
