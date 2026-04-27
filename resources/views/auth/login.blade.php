@@ -139,6 +139,13 @@
 
                 <form method="POST" action="{{ route('login') }}" class="space-y-6">
                     @csrf
+                    {{-- Phase 7: pass the return URL through the form so it survives POST --}}
+                    @if(request('redirect'))
+                        <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+                        <div class="mb-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 font-medium">
+                            🔒 Login to unlock your full diagnosis report
+                        </div>
+                    @endif
 
                     <!-- Email -->
                     <div>

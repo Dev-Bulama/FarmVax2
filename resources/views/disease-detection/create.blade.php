@@ -236,6 +236,42 @@
     </form>
 </div>
 
+{{-- ======================================================
+     PHASE 5 — FULL-PAGE ANALYZING OVERLAY
+     Shown after form submit while the AI processes server-side.
+     ====================================================== --}}
+<div id="analyzing-overlay"
+     class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center"
+     style="background:rgba(17,69,91,0.93);">
+    <div class="text-center px-6 max-w-sm">
+        <div class="relative w-28 h-28 mx-auto mb-8">
+            <div class="absolute inset-0 rounded-full border-4 border-white/20"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-t-white border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+            <div class="absolute inset-3 rounded-full border-4 border-t-transparent border-r-white/50 border-b-transparent border-l-transparent animate-spin" style="animation-duration:1.6s;"></div>
+            <div class="absolute inset-0 flex items-center justify-center text-4xl">🔬</div>
+        </div>
+        <h2 class="text-2xl font-black text-white mb-2">Analyzing...</h2>
+        <p class="text-white/80 text-base mb-8">Please wait while our AI examines the photo</p>
+        <div class="space-y-3 text-sm" id="analysis-steps">
+            <div class="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-2.5" id="step-1">
+                <svg class="h-4 w-4 animate-spin text-white/70 shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span class="text-white/80">Processing image</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 opacity-50" id="step-2">
+                <div class="h-4 w-4 rounded-full border-2 border-white/40 shrink-0"></div>
+                <span class="text-white/60">Running AI analysis</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 opacity-50" id="step-3">
+                <div class="h-4 w-4 rounded-full border-2 border-white/40 shrink-0"></div>
+                <span class="text-white/60">Generating report</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .tab-active {
     background: white;
@@ -245,59 +281,43 @@
 </style>
 
 <script>
-/* ====================================================
-   STATE
-   ==================================================== */
 let activeTab = 'upload';
 let cameraStream = null;
 
-/* ====================================================
-   TAB SWITCHING
-   ==================================================== */
+/* ===== TAB SWITCHING ===== */
 function switchTab(tab) {
     activeTab = tab;
-
     document.getElementById('tab-upload').classList.toggle('tab-active', tab === 'upload');
     document.getElementById('tab-upload').classList.toggle('text-gray-600', tab !== 'upload');
     document.getElementById('tab-camera').classList.toggle('tab-active', tab === 'camera');
     document.getElementById('tab-camera').classList.toggle('text-gray-600', tab !== 'camera');
-
     document.getElementById('section-upload').classList.toggle('hidden', tab !== 'upload');
     document.getElementById('section-camera').classList.toggle('hidden', tab !== 'camera');
-
     if (tab !== 'camera') stopCamera();
 }
 
-/* ====================================================
-   PHASE 3 — UPLOAD FLOW
-   ==================================================== */
+/* ===== PHASE 3 — UPLOAD ===== */
 function handleUploadSelect(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowed.includes(file.type)) {
+    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
         alert('Only JPG, JPEG, and PNG images are accepted.');
-        input.value = '';
+        if (input.value !== undefined) input.value = '';
         return;
     }
     if (file.size > 10 * 1024 * 1024) {
         alert('Image must be smaller than 10 MB.');
-        input.value = '';
+        if (input.value !== undefined) input.value = '';
         return;
     }
-
-    // Copy file to the shared hidden input
     const dt = new DataTransfer();
     dt.items.add(file);
     document.getElementById('image-input').files = dt.files;
 
-    // Show preview
     const reader = new FileReader();
     reader.onload = e => {
-        const prev = document.getElementById('upload-preview');
-        prev.src = e.target.result;
-        prev.classList.remove('hidden');
+        document.getElementById('upload-preview').src = e.target.result;
+        document.getElementById('upload-preview').classList.remove('hidden');
         document.getElementById('upload-placeholder').classList.add('hidden');
         document.getElementById('upload-change-btn').classList.remove('hidden');
     };
@@ -312,44 +332,33 @@ function resetUpload() {
     document.getElementById('upload-change-btn').classList.add('hidden');
 }
 
-// Drag-and-drop
 const dropZone = document.getElementById('drop-zone');
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('border-green-400'); });
 dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('border-green-400'));
 dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('border-green-400');
-    if (e.dataTransfer.files[0]) {
-        handleUploadSelect({ files: e.dataTransfer.files });
-    }
+    if (e.dataTransfer.files[0]) handleUploadSelect({ files: e.dataTransfer.files });
 });
 
-/* ====================================================
-   PHASE 4 — CAMERA FLOW
-   ==================================================== */
+/* ===== PHASE 4 — CAMERA ===== */
 async function startCamera() {
     document.getElementById('camera-prompt').classList.add('hidden');
     document.getElementById('camera-denied').classList.add('hidden');
-
     try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
         });
-        const video = document.getElementById('camera-video');
-        video.srcObject = cameraStream;
+        document.getElementById('camera-video').srcObject = cameraStream;
         document.getElementById('camera-live').classList.remove('hidden');
     } catch (err) {
-        console.error('Camera error:', err);
         document.getElementById('camera-denied').classList.remove('hidden');
         document.getElementById('camera-prompt').classList.remove('hidden');
     }
 }
 
 function stopCamera() {
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-    }
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
     document.getElementById('camera-live').classList.add('hidden');
     document.getElementById('camera-captured').classList.add('hidden');
     document.getElementById('camera-prompt').classList.remove('hidden');
@@ -358,54 +367,60 @@ function stopCamera() {
 function captureAndAnalyze() {
     const video  = document.getElementById('camera-video');
     const canvas = document.getElementById('capture-canvas');
-
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Show captured preview while toBlob runs
     document.getElementById('captured-preview').src = canvas.toDataURL('image/jpeg', 0.92);
     document.getElementById('camera-live').classList.add('hidden');
     document.getElementById('camera-captured').classList.remove('hidden');
 
-    // Stop live stream
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-    }
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
 
-    // Convert canvas frame to File and submit
     canvas.toBlob(blob => {
-        const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
         const dt = new DataTransfer();
-        dt.items.add(file);
+        dt.items.add(new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' }));
         document.getElementById('image-input').files = dt.files;
-
-        // Show loading state then submit
-        document.getElementById('btn-text').textContent = 'Analysing…';
-        document.getElementById('btn-spinner').classList.remove('hidden');
-        document.getElementById('submit-btn').disabled = true;
+        showAnalyzingOverlay();
         document.getElementById('scan-form').submit();
     }, 'image/jpeg', 0.92);
 }
 
-/* ====================================================
-   FORM SUBMIT — loading state (upload flow)
-   ==================================================== */
+/* ===== PHASE 5 — ANALYZING OVERLAY ===== */
+function showAnalyzingOverlay() {
+    document.getElementById('analyzing-overlay').classList.remove('hidden');
+    document.getElementById('submit-btn').disabled = true;
+    // Animate steps with delays
+    setTimeout(() => {
+        const s2 = document.getElementById('step-2');
+        s2.classList.remove('opacity-50');
+        s2.querySelector('div').outerHTML =
+            '<svg class="h-4 w-4 animate-spin text-white/70 shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>';
+        s2.querySelector('span').classList.replace('text-white/60', 'text-white/80');
+        s2.classList.replace('bg-white/5', 'bg-white/10');
+    }, 1200);
+    setTimeout(() => {
+        const s3 = document.getElementById('step-3');
+        s3.classList.remove('opacity-50');
+        s3.querySelector('div').outerHTML =
+            '<svg class="h-4 w-4 animate-spin text-white/70 shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>';
+        s3.querySelector('span').classList.replace('text-white/60', 'text-white/80');
+        s3.classList.replace('bg-white/5', 'bg-white/10');
+    }, 2800);
+}
+
+/* ===== FORM SUBMIT ===== */
 document.getElementById('scan-form').addEventListener('submit', function(e) {
     const fileInput = document.getElementById('image-input');
     if (!fileInput.files || fileInput.files.length === 0) {
         e.preventDefault();
-        alert(activeTab === 'camera'
-            ? 'Please capture a photo first.'
-            : 'Please select an image to upload.');
+        alert(activeTab === 'camera' ? 'Please capture a photo first.' : 'Please select an image to upload.');
         return;
     }
-    // Camera flow manages loading state itself (inside captureAndAnalyze)
     if (activeTab === 'upload') {
+        showAnalyzingOverlay();
         document.getElementById('btn-text').textContent = 'Analysing…';
         document.getElementById('btn-spinner').classList.remove('hidden');
-        document.getElementById('submit-btn').disabled = true;
     }
 });
 </script>

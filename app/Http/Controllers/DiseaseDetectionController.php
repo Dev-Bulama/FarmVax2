@@ -57,8 +57,16 @@ class DiseaseDetectionController extends Controller
         // Run AI analysis synchronously (for shared hosting without queue)
         $this->service->analyse($detection);
 
-        return redirect()->route('disease-detection.show', $detection->id)
+        // Redirect to public results page (Phase 6/7)
+        return redirect()->route('disease-detection.public', $detection->id)
             ->with('success', 'Analysis complete!');
+    }
+
+    public function publicShow($id)
+    {
+        $scan = DiseaseDetection::with('livestock')->findOrFail($id);
+
+        return view('disease-detection.public-show', compact('scan'));
     }
 
     public function show($id)
