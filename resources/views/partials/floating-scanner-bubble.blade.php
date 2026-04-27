@@ -644,6 +644,7 @@
 
             const resp = await fetch('{{ route("disease-detection.public-store") }}', {
                 method: 'POST',
+                headers: { 'Accept': 'application/json' },
                 body: fd,
             });
 
