@@ -497,8 +497,6 @@
     </div>
     @endif
 
-    @endif {{-- end auth check --}}
-
     @endif {{-- end status/type check --}}
 
 </main>
