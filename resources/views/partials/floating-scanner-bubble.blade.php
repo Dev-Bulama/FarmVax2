@@ -13,7 +13,7 @@
               class="hidden md:block absolute right-[4.5rem] whitespace-nowrap text-xs font-semibold
                      text-white bg-[#11455B]/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md
                      opacity-0 translate-x-2 transition-all duration-200 pointer-events-none">
-            Detect Disease
+            Scan Diseases
         </span>
 
         {{-- Bubble button (opens modal instead of navigating) --}}
@@ -36,10 +36,10 @@
         </button>
     </div>
 
-    {{-- Mobile always-visible label --}}
-    <span class="md:hidden text-[10px] font-bold tracking-wide text-[#11455B] bg-white/90
-                 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm text-center">
-        Scan
+    {{-- Always-visible label (all screen sizes) --}}
+    <span class="text-[10px] font-bold tracking-wide text-[#11455B] bg-white/90
+                 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm text-center whitespace-nowrap">
+        Scan Diseases
     </span>
 </div>
 
@@ -397,8 +397,12 @@
         }));
 
         document.body.style.overflow = 'hidden';
-        // Initialise to upload tab
-        switchScannerTab('upload');
+        // Initialise to upload tab (pass false so the tab switch doesn't also fire the picker)
+        switchScannerTab('upload', false);
+        // Small delay lets the modal finish its open animation before the OS file dialog appears
+        setTimeout(() => {
+            if (!scannerImageFile) triggerScannerFileInput();
+        }, 280);
     };
 
     window.closeScannerModal = function () {
@@ -418,7 +422,7 @@
     };
 
     /* ── tabs ───────────────────────────────────────────────────── */
-    window.switchScannerTab = function (tab) {
+    window.switchScannerTab = function (tab, autoPickFile) {
         scannerCurrentTab = tab;
 
         document.querySelectorAll('.scanner-tab').forEach(el => {
@@ -433,6 +437,11 @@
             startScannerCamera();
         } else {
             stopScannerCamera();
+            // When the user explicitly clicks "Upload Image" tab, open the picker straight away
+            // (unless a file is already loaded). autoPickFile is false only on internal calls.
+            if (autoPickFile !== false && !scannerImageFile) {
+                setTimeout(() => triggerScannerFileInput(), 80);
+            }
         }
     };
 
