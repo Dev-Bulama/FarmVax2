@@ -122,6 +122,13 @@
         </button>
     </div>
 
+    {{-- ── How-to hint strip ───────────────────────────────────────── --}}
+    <div class="flex items-center justify-center gap-4 px-5 py-2 bg-blue-50 border-b border-blue-100 text-[11px] text-blue-600 font-medium">
+        <span>📤 <strong>Upload Image</strong> — browse your gallery</span>
+        <span class="text-blue-300">|</span>
+        <span>📷 <strong>Camera</strong> — take a live photo</span>
+    </div>
+
     {{-- ── Tab Content ──────────────────────────────────────────── --}}
     <div class="scanner-modal-body overflow-y-auto px-5 py-5">
 
@@ -397,12 +404,9 @@
         }));
 
         document.body.style.overflow = 'hidden';
-        // Initialise to upload tab (pass false so the tab switch doesn't also fire the picker)
+        // Initialise to upload tab without auto-opening the file picker —
+        // let the user consciously choose upload vs camera first
         switchScannerTab('upload', false);
-        // Small delay lets the modal finish its open animation before the OS file dialog appears
-        setTimeout(() => {
-            if (!scannerImageFile) triggerScannerFileInput();
-        }, 280);
     };
 
     window.closeScannerModal = function () {
