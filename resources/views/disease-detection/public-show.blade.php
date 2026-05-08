@@ -536,7 +536,6 @@
         </div>
         @endif
 
-        @if(auth()->check())
         <form action="{{ route('disease-detection.rate', $scan->id) }}" method="POST" class="space-y-4">
             @csrf
             <div>
@@ -609,21 +608,6 @@
             if (checkedInit) highlight(parseInt(checkedInit.value));
         })();
         </script>
-
-        @else
-        {{-- Guest: prompt to login --}}
-        <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-            <div>
-                <p class="text-sm font-semibold text-gray-700">Want to rate this result?</p>
-                <p class="text-xs text-gray-500 mt-0.5">Login to rate the AI accuracy and leave a comment.</p>
-            </div>
-            <a href="{{ route('login') }}?redirect={{ urlencode(url()->current()) }}"
-               class="shrink-0 px-4 py-2 text-white text-sm font-bold rounded-xl transition hover:opacity-90"
-               style="background:#11455b;">
-                Login to Rate
-            </a>
-        </div>
-        @endif
     </div>
     @endif
 
