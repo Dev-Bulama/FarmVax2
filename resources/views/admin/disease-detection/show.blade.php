@@ -171,6 +171,39 @@
 
             @endif
 
+            {{-- User Rating & Comment --}}
+            @if($scan->user_rating || $scan->user_comment)
+            <div class="bg-white rounded-xl shadow p-5">
+                <h3 class="font-bold text-gray-800 mb-4">User Feedback</h3>
+
+                @if($scan->user_rating)
+                <div class="mb-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">AI Accuracy Rating</p>
+                    <div class="flex items-center gap-1">
+                        @for($i = 1; $i <= 5; $i++)
+                        <svg class="w-6 h-6 {{ $i <= $scan->user_rating ? 'text-amber-400' : 'text-gray-200' }}"
+                             fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        @endfor
+                        <span class="ml-2 text-sm font-bold text-gray-700">{{ $scan->user_rating }}/5</span>
+                        @php
+                            $ratingTexts = [1 => 'Poor', 2 => 'Fair', 3 => 'Good', 4 => 'Very Good', 5 => 'Excellent'];
+                        @endphp
+                        <span class="ml-1 text-xs text-gray-500">({{ $ratingTexts[$scan->user_rating] ?? '' }})</span>
+                    </div>
+                </div>
+                @endif
+
+                @if($scan->user_comment)
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Comment / Suggestion</p>
+                    <p class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 italic">"{{ $scan->user_comment }}"</p>
+                </div>
+                @endif
+            </div>
+            @endif
+
             {{-- Admin notes / raw JSON (debug) --}}
             <div class="bg-white rounded-xl shadow p-5">
                 <h3 class="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">Scan Metadata</h3>

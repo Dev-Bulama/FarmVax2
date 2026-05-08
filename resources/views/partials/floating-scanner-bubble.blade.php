@@ -13,7 +13,7 @@
               class="hidden md:block absolute right-[4.5rem] whitespace-nowrap text-xs font-semibold
                      text-white bg-[#11455B]/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md
                      opacity-0 translate-x-2 transition-all duration-200 pointer-events-none">
-            Scan Diseases
+            {{ $bubbleLabel ?? \App\Models\Setting::get('scanner_bubble_label', 'AI DOCTA') }}
         </span>
 
         {{-- Bubble button (opens modal instead of navigating) --}}
@@ -37,9 +37,10 @@
     </div>
 
     {{-- Always-visible label (all screen sizes) --}}
+    @php $bubbleLabel = \App\Models\Setting::get('scanner_bubble_label', 'AI DOCTA'); @endphp
     <span class="text-[10px] font-bold tracking-wide text-[#11455B] bg-white/90
                  backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm text-center whitespace-nowrap">
-        Scan Diseases
+        {{ $bubbleLabel }}
     </span>
 </div>
 
@@ -120,13 +121,6 @@
             </svg>
             Scan with Camera
         </button>
-    </div>
-
-    {{-- ── How-to hint strip ───────────────────────────────────────── --}}
-    <div class="flex items-center justify-center gap-4 px-5 py-2 bg-blue-50 border-b border-blue-100 text-[11px] text-blue-600 font-medium">
-        <span>📤 <strong>Upload Image</strong> — browse your gallery</span>
-        <span class="text-blue-300">|</span>
-        <span>📷 <strong>Camera</strong> — take a live photo</span>
     </div>
 
     {{-- ── Tab Content ──────────────────────────────────────────── --}}
