@@ -117,6 +117,27 @@ class DiseaseDetectionController extends Controller
         return view('disease-detection.show', compact('scan'));
     }
 
+    public function rate(Request $request, $id)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login', ['redirect' => url()->previous()])
+                ->with('error', 'Please login to rate this result.');
+        }
+
+        $request->validate([
+            'rating'  => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        $scan = DiseaseDetection::findOrFail($id);
+        $scan->update([
+            'user_rating'  => $request->rating,
+            'user_comment' => $request->comment,
+        ]);
+
+        return redirect()->back()->with('feedback_success', 'Thank you for your feedback!');
+    }
+
     public function destroy($id)
     {
         $scan = DiseaseDetection::where('user_id', Auth::id())->findOrFail($id);

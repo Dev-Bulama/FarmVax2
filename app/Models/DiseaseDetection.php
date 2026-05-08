@@ -14,7 +14,7 @@ class DiseaseDetection extends Model
         'user_id', 'livestock_id', 'image_path', 'animal_type',
         'symptoms_reported', 'status', 'is_sick', 'confidence_score',
         'analysis_result', 'detected_conditions', 'recommendations',
-        'urgency_level', 'ai_model',
+        'urgency_level', 'ai_model', 'user_rating', 'user_comment',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class DiseaseDetection extends Model
             'detected_conditions' => 'array',
             'is_sick'             => 'boolean',
             'confidence_score'    => 'decimal:2',
+            'user_rating'         => 'integer',
         ];
     }
 

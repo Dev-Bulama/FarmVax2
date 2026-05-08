@@ -894,6 +894,10 @@ Route::middleware(['auth'])->prefix('disease-detection')->name('disease-detectio
 Route::get('/results/{id}', [\App\Http\Controllers\DiseaseDetectionController::class, 'publicShow'])
     ->name('disease-detection.public');
 
+// Rate / comment on a scan result (auth required)
+Route::post('/results/{id}/rate', [\App\Http\Controllers\DiseaseDetectionController::class, 'rate'])
+    ->name('disease-detection.rate');
+
 // Public scan submission — called via fetch() from the landing-page bubble.
 // No auth required; user_id is null for guests.
 Route::post('/public-scan', [\App\Http\Controllers\DiseaseDetectionController::class, 'publicStore'])

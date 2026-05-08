@@ -487,9 +487,10 @@ public function diseaseDetection()
     $openaiModel     = Setting::get('disease_detection_openai_model', 'gpt-4o');
     $anthropicKey    = Setting::get('disease_detection_anthropic_key', '');
     $anthropicModel  = Setting::get('disease_detection_anthropic_model', 'claude-sonnet-4-6');
+    $bubbleLabel     = Setting::get('scanner_bubble_label', 'AI DOCTA');
 
     return view('admin.settings.disease-detection', compact(
-        'provider', 'openaiKey', 'openaiModel', 'anthropicKey', 'anthropicModel'
+        'provider', 'openaiKey', 'openaiModel', 'anthropicKey', 'anthropicModel', 'bubbleLabel'
     ));
 }
 
@@ -501,6 +502,7 @@ public function updateDiseaseDetection(Request $request)
         'disease_detection_openai_model'   => 'nullable|string|max:100',
         'disease_detection_anthropic_key'  => 'nullable|string|max:500',
         'disease_detection_anthropic_model'=> 'nullable|string|max:100',
+        'scanner_bubble_label'             => 'nullable|string|max:20',
     ]);
 
     foreach ($validated as $key => $value) {

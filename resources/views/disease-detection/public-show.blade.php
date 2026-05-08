@@ -499,6 +499,134 @@
 
     @endif {{-- end status/type check --}}
 
+    {{-- ================================================================
+         RATING & FEEDBACK SECTION
+         ================================================================ --}}
+    @if($scan->status === 'completed' && !$isNotAnimal)
+    <div class="fade-up bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+
+        <div class="flex items-center gap-2 mb-5">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-black"
+                 style="background:#2fcb6e;">★</div>
+            <h2 class="text-lg font-bold" style="color:#11455b;">Rate AI Accuracy</h2>
+        </div>
+
+        @if(session('feedback_success'))
+        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-medium">
+            ✓ {{ session('feedback_success') }}
+        </div>
+        @endif
+
+        @if($scan->user_rating)
+        {{-- Already rated: show existing rating --}}
+        <div class="mb-5">
+            <p class="text-xs text-gray-500 mb-1 uppercase tracking-wide font-semibold">Current Rating</p>
+            <div class="flex items-center gap-1">
+                @for($i = 1; $i <= 5; $i++)
+                <svg class="w-7 h-7 {{ $i <= $scan->user_rating ? 'text-amber-400' : 'text-gray-200' }}"
+                     fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                @endfor
+                <span class="ml-2 text-sm font-bold text-gray-700">{{ $scan->user_rating }}/5</span>
+            </div>
+            @if($scan->user_comment)
+            <p class="mt-3 text-sm text-gray-600 italic">"{{ $scan->user_comment }}"</p>
+            @endif
+        </div>
+        @endif
+
+        @if(auth()->check())
+        <form action="{{ route('disease-detection.rate', $scan->id) }}" method="POST" class="space-y-4">
+            @csrf
+            <div>
+                <p class="text-sm font-semibold text-gray-700 mb-2">
+                    {{ $scan->user_rating ? 'Update your rating:' : 'How accurate was the AI diagnosis?' }}
+                </p>
+                <div class="flex items-center gap-2" id="star-container">
+                    @for($i = 1; $i <= 5; $i++)
+                    <label class="cursor-pointer star-label" data-val="{{ $i }}">
+                        <input type="radio" name="rating" value="{{ $i }}"
+                               class="sr-only"
+                               {{ $scan->user_rating == $i ? 'checked' : '' }}>
+                        <svg class="w-9 h-9 transition-colors duration-100 star-icon
+                                   {{ $scan->user_rating && $scan->user_rating >= $i ? 'text-amber-400' : 'text-gray-200' }}"
+                             fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                    </label>
+                    @endfor
+                    <span id="star-label-text" class="text-sm text-gray-400 ml-2"></span>
+                </div>
+                @error('rating')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                    Comment / Suggestion <span class="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea name="comment" rows="3" maxlength="1000"
+                          placeholder="Share your feedback or suggest improvements to the AI…"
+                          class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700
+                                 focus:ring-2 focus:ring-[#2fcb6e] focus:border-[#2fcb6e] resize-none">{{ old('comment', $scan->user_comment) }}</textarea>
+                @error('comment')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <button type="submit"
+                    class="px-6 py-2.5 text-white text-sm font-bold rounded-xl transition hover:opacity-90"
+                    style="background:linear-gradient(135deg,#2fcb6e,#11455b);">
+                {{ $scan->user_rating ? 'Update Feedback' : 'Submit Feedback' }}
+            </button>
+        </form>
+
+        <script>
+        (function () {
+            const labels = document.querySelectorAll('.star-label');
+            const stars  = document.querySelectorAll('.star-icon');
+            const hint   = document.getElementById('star-label-text');
+            const texts  = ['','Poor','Fair','Good','Very Good','Excellent'];
+
+            function highlight(n) {
+                stars.forEach((s, i) => {
+                    s.classList.toggle('text-amber-400', i < n);
+                    s.classList.toggle('text-gray-200',  i >= n);
+                });
+                hint.textContent = texts[n] || '';
+            }
+
+            labels.forEach(lbl => {
+                const val = parseInt(lbl.dataset.val);
+                lbl.addEventListener('mouseenter', () => highlight(val));
+                lbl.addEventListener('mouseleave', () => {
+                    const checked = document.querySelector('input[name="rating"]:checked');
+                    highlight(checked ? parseInt(checked.value) : 0);
+                });
+                lbl.addEventListener('click', () => highlight(val));
+            });
+
+            // Initialise if already rated
+            const checkedInit = document.querySelector('input[name="rating"]:checked');
+            if (checkedInit) highlight(parseInt(checkedInit.value));
+        })();
+        </script>
+
+        @else
+        {{-- Guest: prompt to login --}}
+        <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div>
+                <p class="text-sm font-semibold text-gray-700">Want to rate this result?</p>
+                <p class="text-xs text-gray-500 mt-0.5">Login to rate the AI accuracy and leave a comment.</p>
+            </div>
+            <a href="{{ route('login') }}?redirect={{ urlencode(url()->current()) }}"
+               class="shrink-0 px-4 py-2 text-white text-sm font-bold rounded-xl transition hover:opacity-90"
+               style="background:#11455b;">
+                Login to Rate
+            </a>
+        </div>
+        @endif
+    </div>
+    @endif
+
 </main>
 
 {{-- Footer --}}
