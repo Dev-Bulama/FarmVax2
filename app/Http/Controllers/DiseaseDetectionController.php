@@ -119,11 +119,6 @@ class DiseaseDetectionController extends Controller
 
     public function rate(Request $request, $id)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login', ['redirect' => url()->previous()])
-                ->with('error', 'Please login to rate this result.');
-        }
-
         $request->validate([
             'rating'  => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
